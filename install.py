@@ -1,0 +1,173 @@
+import os, os.path, sys
+import urllib, zipfile
+import shutil, glob, fnmatch, tempfile
+import subprocess, logging, shlex
+from hashlib import md5  # pylint: disable-msg=E0611
+from optparse import OptionParser
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
+#Helpers taken from forge mod loader, https://github.com/MinecraftForge/FML/blob/master/install/fml.py
+def get_md5(file):
+    if not os.path.isfile(file):
+        return ""
+    with open(file, 'rb') as fh:
+        return md5(fh.read()).hexdigest()
+
+def download_file(url, target, md5=None):
+    name = os.path.basename(target)
+    
+    if not os.path.isfile(target):
+        try:
+            urllib.urlretrieve(url, target)
+            if not md5 == None:
+                if not get_md5(target) == md5:
+                    print 'Download of %s failed md5 check, deleting' % name
+                    os.remove(target)
+                    return False
+            print 'Downloaded %s' % name
+        except Exception as e:
+            print e
+            print 'Download of %s failed, download it manually from \'%s\' to \'%s\'' % (target, url, target)
+            return False
+    else:
+        print 'File Exists: %s' % os.path.basename(target)
+    return True
+    
+def download_native(url, folder, name):
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    
+    target = os.path.join(folder, name)
+    if not download_file(url + name, target):
+        return False
+    
+    zip = zipfile.ZipFile(target)
+    for name in zip.namelist():
+        if not name.startswith('META-INF') and not name.endswith('/'):
+            out_file = os.path.join(folder, name)
+            if not os.path.isfile(out_file):
+                print '    Extracting %s' % name
+                out = open(out_file, 'wb')
+                out.write(zip.read(name))
+                out.flush()
+                out.close()
+    zip.close()
+    return True 
+
+def cmdsplit(args):
+    if os.sep == '\\':
+        args = args.replace('\\', '\\\\')
+    return shlex.split(args)
+
+def apply_patch( mcp_dir, patch_file, target_dir ):
+    
+    if os.name == 'nt':
+        applydiff = os.path.abspath(os.path.join(mcp_dir, 'runtime', 'bin', 'applydiff.exe'))
+        cmd = cmdsplit('"%s" -uf -p2 -i "%s"' % (applydiff, patch_file ))
+    else:
+        cmd = cmdsplit('patch -p2 -i "%s" ' % patch_file )
+
+    process = subprocess.Popen(cmd, cwd=target_dir, bufsize=-1)
+    process.communicate()
+
+def apply_patches(mcp_dir, patch_dir, target_dir, find=None, rep=None):
+    for path, _, filelist in os.walk(patch_dir, followlinks=True):
+        for cur_file in fnmatch.filter(filelist, '*.patch'):
+            patch_file = os.path.normpath(os.path.join(patch_dir, path[len(patch_dir)+1:], cur_file))
+            apply_patch( mcp_dir, patch_file, target_dir )
+
+def download_deps( mcp_dir ):
+
+    jars = os.path.join(mcp_dir,"jars")
+    bin = os.path.join(jars,"bin")
+    MinecraftDownload = "http://s3.amazonaws.com/MinecraftDownload/"
+    for native in ("windows_natives.jar", "macosx_natives.jar", "linux_natives.jar" ):
+        download_native( MinecraftDownload, os.path.join(bin,"natives"), native )
+
+    for jar in ("lwjgl.jar", "lwjgl_util.jar", "jinput.jar" ):
+        download_file( MinecraftDownload + jar, os.path.join(bin,jar) )
+
+
+    MinecraftDownload = "http://s3.amazonaws.com/Minecraft.Download/versions/"
+    download_file( MinecraftDownload+ "1.5.2/1.5.2.jar", os.path.join(bin,"minecraft.jar"), "6897c3287fb971c9f362eb3ab20f5ddd" )
+    download_file( MinecraftDownload+ "1.5.2/minecraft_server.1.5.2.jar", os.path.join(jars,"minecraft_server.jar"),"c4e1bf89e834bd3670c7bf8f13874bc6" ) 
+
+    download_file( "http://optifine.net/download.php?f=OptiFine_1.5.2_HD_U_D3.zip", os.path.join(bin,"optifine.zip"), "de96e9633842957bf2c25cc59151e3e1" )
+
+def zipmerge( target_file, source_file ):
+    out_file, out_filename = tempfile.mkstemp()
+    out = zipfile.ZipFile(out_filename,'a')
+    target = zipfile.ZipFile( target_file, 'r')
+    source = zipfile.ZipFile( source_file, 'r' )
+
+    #source supersedes target
+    source_files = set( source.namelist() )
+    target_files = set( target.namelist() ) - source_files
+
+    for file in source_files:
+        out.writestr( file, source.open( file ).read() )
+
+    for file in target_files:
+        out.writestr( file, target.open( file ).read() )
+
+    source.close()
+    target.close()
+    out.close()
+    os.remove( target_file )
+    shutil.move( out_filename, target_file )
+    
+def merge_tree(root_src_dir, root_dst_dir):
+    for src_dir, dirs, files in os.walk(root_src_dir):
+        dst_dir = src_dir.replace(root_src_dir, root_dst_dir)
+        if not os.path.exists(dst_dir):
+            os.mkdir(dst_dir)
+        for file_ in files:
+            src_file = os.path.join(src_dir, file_)
+            dst_file = os.path.join(dst_dir, file_)
+            if os.path.exists(dst_file):
+                os.remove(dst_file)
+            shutil.copy(src_file, dst_dir)
+
+def main(mcp_dir):
+    print("Downloading dependencies...")
+    download_deps( mcp_dir )
+
+    print("Applying Optifine...")
+    zipmerge( os.path.join( mcp_dir,"jars","bin","minecraft.jar"),
+              os.path.join( mcp_dir,"jars","bin","optifine.zip") )
+
+    print("Decompiling...")
+    sys.path.append(mcp_dir)
+    os.chdir(mcp_dir)
+    from runtime.decompile import decompile
+    #         Conf  JAD    CSV    -r    -d    -a     -n    -p     -o     -l     -g     -c     -s
+    #decompile(None, False, False, True, False, False, False, False, False, False, False, False, False )
+
+    os.chdir( base_dir )
+
+    src_dir = os.path.join(mcp_dir, "src","minecraft")
+    bak_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
+    try:
+        os.remove( bak_dir )
+    except OSError as e:
+        pass
+    #create "clean" backup for doing diffs later
+    shutil.copytree( src_dir, bak_dir )
+
+    #apply patches
+    apply_patches( mcp_dir, os.path.join( base_dir, "patches"), src_dir )
+    #merge in the new classes
+    merge_tree( os.path.join( base_dir, "src" ), src_dir )
+    
+if __name__ == '__main__':
+    parser = OptionParser()
+    parser.add_option('-m', '--mcp-dir', action='store', dest='mcp_dir', help='Path to MCP to use', default=None)
+    options, _ = parser.parse_args()
+
+    if not options.mcp_dir is None:
+        main(os.path.abspath(options.mcp_dir))
+    elif os.path.isfile(os.path.join('..', 'runtime', 'commands.py')):
+        main(os.path.abspath('..'))
+    else:
+        main(os.path.abspath('mcp'))
