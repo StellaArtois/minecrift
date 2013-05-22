@@ -1,9 +1,10 @@
 import os, os.path, sys
 import urllib, zipfile
-import shutil, glob, fnmatch, tempfile
-import subprocess, logging, shlex
+import shutil, tempfile
 from hashlib import md5  # pylint: disable-msg=E0611
 from optparse import OptionParser
+
+from applychanges import apply_patches, merge_tree
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,27 +56,6 @@ def download_native(url, folder, name):
     zip.close()
     return True 
 
-def cmdsplit(args):
-    if os.sep == '\\':
-        args = args.replace('\\', '\\\\')
-    return shlex.split(args)
-
-def apply_patch( mcp_dir, patch_file, target_dir ):
-    if os.name == 'nt':
-        applydiff = os.path.abspath(os.path.join(mcp_dir, 'runtime', 'bin', 'applydiff.exe'))
-        cmd = cmdsplit('"%s" -uf -p3 -i "%s"' % (applydiff, patch_file ))
-    else:
-        cmd = cmdsplit('patch -p3 -i "%s" ' % patch_file )
-
-    process = subprocess.Popen(cmd, cwd=target_dir, bufsize=-1)
-    process.communicate()
-
-def apply_patches(mcp_dir, patch_dir, target_dir, find=None, rep=None):
-    for path, _, filelist in os.walk(patch_dir, followlinks=True):
-        for cur_file in fnmatch.filter(filelist, '*.patch'):
-            patch_file = os.path.normpath(os.path.join(patch_dir, path[len(patch_dir)+1:], cur_file))
-            apply_patch( mcp_dir, patch_file, target_dir )
-
 def download_deps( mcp_dir ):
 
     jars = os.path.join(mcp_dir,"jars")
@@ -116,18 +96,6 @@ def zipmerge( target_file, source_file ):
     os.remove( target_file )
     shutil.move( out_filename, target_file )
     
-def merge_tree(root_src_dir, root_dst_dir):
-    for src_dir, dirs, files in os.walk(root_src_dir):
-        dst_dir = src_dir.replace(root_src_dir, root_dst_dir)
-        if not os.path.exists(dst_dir):
-            os.mkdir(dst_dir)
-        for file_ in files:
-            src_file = os.path.join(src_dir, file_)
-            dst_file = os.path.join(dst_dir, file_)
-            if os.path.exists(dst_file):
-                os.remove(dst_file)
-            shutil.copy(src_file, dst_dir)
-
 def main(mcp_dir):
     print("Downloading dependencies...")
     download_deps( mcp_dir )
@@ -141,7 +109,7 @@ def main(mcp_dir):
     os.chdir(mcp_dir)
     from runtime.decompile import decompile
     #         Conf  JAD    CSV    -r    -d     -a     -n     -p     -o     -l     -g     -c     -s
-    #decompile(None, False, False, True, False, False, False, False, False, False, False, False, False )
+    decompile(None, False, False, True, False, False, False, False, False, False, False, False, False )
 
     os.chdir( base_dir )
 
