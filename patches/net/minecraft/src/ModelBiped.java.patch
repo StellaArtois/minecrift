@@ -1,0 +1,46 @@
+--- ./src/.minecraft_orig/net/minecraft/src/ModelBiped.java	2013-05-22 01:14:06.275046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/ModelBiped.java	2013-05-22 02:42:15.147096917 -0500
+@@ -4,6 +4,8 @@
+ 
+ public class ModelBiped extends ModelBase
+ {
++    public boolean _renderHead = true;   // TODO: How to stop head rendering!
++    public boolean _renderHeadWear = true;   // TODO: How to stop head wear rendering?
+     public ModelRenderer bipedHead;
+     public ModelRenderer bipedHeadwear;
+     public ModelRenderer bipedBody;
+@@ -88,7 +90,8 @@
+             GL11.glPushMatrix();
+             GL11.glScalef(1.5F / var8, 1.5F / var8, 1.5F / var8);
+             GL11.glTranslatef(0.0F, 16.0F * par7, 0.0F);
+-            this.bipedHead.render(par7);
++            if (_renderHead)
++                this.bipedHead.render(par7);
+             GL11.glPopMatrix();
+             GL11.glPushMatrix();
+             GL11.glScalef(1.0F / var8, 1.0F / var8, 1.0F / var8);
+@@ -98,18 +101,21 @@
+             this.bipedLeftArm.render(par7);
+             this.bipedRightLeg.render(par7);
+             this.bipedLeftLeg.render(par7);
+-            this.bipedHeadwear.render(par7);
++            if (_renderHeadWear)
++                this.bipedHeadwear.render(par7);
+             GL11.glPopMatrix();
+         }
+         else
+         {
+-            this.bipedHead.render(par7);
++            if (_renderHead)
++                this.bipedHead.render(par7);
+             this.bipedBody.render(par7);
+             this.bipedRightArm.render(par7);
+             this.bipedLeftArm.render(par7);
+             this.bipedRightLeg.render(par7);
+             this.bipedLeftLeg.render(par7);
+-            this.bipedHeadwear.render(par7);
++            if (_renderHeadWear)
++                this.bipedHeadwear.render(par7);
+         }
+     }
+ 

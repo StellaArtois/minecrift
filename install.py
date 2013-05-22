@@ -61,12 +61,11 @@ def cmdsplit(args):
     return shlex.split(args)
 
 def apply_patch( mcp_dir, patch_file, target_dir ):
-    
     if os.name == 'nt':
         applydiff = os.path.abspath(os.path.join(mcp_dir, 'runtime', 'bin', 'applydiff.exe'))
-        cmd = cmdsplit('"%s" -uf -p2 -i "%s"' % (applydiff, patch_file ))
+        cmd = cmdsplit('"%s" -uf -p3 -i "%s"' % (applydiff, patch_file ))
     else:
-        cmd = cmdsplit('patch -p2 -i "%s" ' % patch_file )
+        cmd = cmdsplit('patch -p3 -i "%s" ' % patch_file )
 
     process = subprocess.Popen(cmd, cwd=target_dir, bufsize=-1)
     process.communicate()
@@ -141,7 +140,7 @@ def main(mcp_dir):
     sys.path.append(mcp_dir)
     os.chdir(mcp_dir)
     from runtime.decompile import decompile
-    #         Conf  JAD    CSV    -r    -d    -a     -n    -p     -o     -l     -g     -c     -s
+    #         Conf  JAD    CSV    -r    -d     -a     -n     -p     -o     -l     -g     -c     -s
     #decompile(None, False, False, True, False, False, False, False, False, False, False, False, False )
 
     os.chdir( base_dir )
@@ -153,7 +152,10 @@ def main(mcp_dir):
     except OSError as e:
         pass
     #create "clean" backup for doing diffs later
-    shutil.copytree( src_dir, bak_dir )
+    try:
+        shutil.copytree( src_dir, bak_dir )
+    except OSError as e:
+        pass
 
     #apply patches
     apply_patches( mcp_dir, os.path.join( base_dir, "patches"), src_dir )

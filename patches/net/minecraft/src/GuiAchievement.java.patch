@@ -1,0 +1,196 @@
+--- ./src/.minecraft_orig/net/minecraft/src/GuiAchievement.java	2013-05-22 01:14:06.439046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/GuiAchievement.java	2013-05-22 02:42:15.151096917 -0500
+@@ -1,9 +1,13 @@
+ package net.minecraft.src;
+ 
++import de.fruitfly.ovr.EyeRenderParams;
++import de.fruitfly.ovr.OculusRift;
+ import net.minecraft.client.Minecraft;
+ import org.lwjgl.opengl.GL11;
+ import org.lwjgl.opengl.GL12;
+ 
++import static java.lang.Math.ceil;
++
+ public class GuiAchievement extends Gui
+ {
+     /** Holds the instance of the game (Minecraft) */
+@@ -29,6 +33,7 @@
+ 
+     public GuiAchievement(Minecraft par1Minecraft)
+     {
++        _isForOculus = true;
+         this.theGame = par1Minecraft;
+         this.itemRender = new RenderItem();
+     }
+@@ -60,32 +65,103 @@
+     /**
+      * Update the display of the achievement window to match the game window.
+      */
+-    private void updateAchievementWindowScale()
++    private void updateAchievementWindowScale(OculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
+     {
+-        GL11.glViewport(0, 0, this.theGame.displayWidth, this.theGame.displayHeight);
++        float scale = 1.0f;
++        int width = this.theGame.displayWidth;
++        int height = this.theGame.displayHeight;
++
++        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
++        GL11.glMatrixMode(GL11.GL_PROJECTION);
++        GL11.glPushMatrix();
++        GL11.glMatrixMode(GL11.GL_MODELVIEW);
++        GL11.glPushMatrix();
++
++//        if (oculusRift.use)
++//        {
++//            // TODO: Scale of achievement
++//            //scale = 3.0f;
++//            width = (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale);
++//            height = (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale);
++//        }
++//
++//        if (oculusRift.use)
++//        {
++//            if (renderSceneNumber == 0)
++//            {
++//                // Left eye
++//                GL11.glViewport((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
++//                GL11.glScissor((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
++//            }
++//            else
++//            {
++//                // Right eye
++//                GL11.glViewport((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
++//                GL11.glScissor((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
++//                        (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
++//            }
++//        }
++//        else
++//        {
++            GL11.glViewport(0, 0, width, height);
++        //}
+         GL11.glMatrixMode(GL11.GL_PROJECTION);
+         GL11.glLoadIdentity();
+         GL11.glMatrixMode(GL11.GL_MODELVIEW);
+         GL11.glLoadIdentity();
+-        this.achievementWindowWidth = this.theGame.displayWidth;
+-        this.achievementWindowHeight = this.theGame.displayHeight;
+-        ScaledResolution var1 = new ScaledResolution(this.theGame.gameSettings, this.theGame.displayWidth, this.theGame.displayHeight);
+-        this.achievementWindowWidth = var1.getScaledWidth();
+-        this.achievementWindowHeight = var1.getScaledHeight();
++        this.achievementWindowWidth = width;
++        this.achievementWindowHeight = height;
++        ScaledResolution var1 = new ScaledResolution(this.theGame.gameSettings, width, height);
++        this.achievementWindowWidth = (int)ceil(var1.getScaledWidth() * scale);
++        this.achievementWindowHeight = (int)ceil(var1.getScaledHeight() * scale);
+         GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
+         GL11.glMatrixMode(GL11.GL_PROJECTION);
+         GL11.glLoadIdentity();
+         GL11.glOrtho(0.0D, (double)this.achievementWindowWidth, (double)this.achievementWindowHeight, 0.0D, 1000.0D, 3000.0D);
+         GL11.glMatrixMode(GL11.GL_MODELVIEW);
+         GL11.glLoadIdentity();
+-        GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
++
++        // TODO: The below transform must be done - however GL_PROJECTION and GL_MODELVIEW
++        // TODO: state must be pushed / popped between this and the rest of the in-game GUI
++        if (oculusRift.use)
++        {
++            // TODO: Determine position
++            GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
++        }
++        else
++        {
++            GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
++        }
++
++        GL11.glMatrixMode(GL11.GL_PROJECTION);
++        GL11.glPopMatrix();
++        GL11.glMatrixMode(GL11.GL_MODELVIEW);
++        GL11.glPopMatrix();
++        GL11.glPopAttrib();
+     }
+ 
+     /**
+      * Updates the small achievement tooltip window, showing a queued achievement if is needed.
+      */
+-    public void updateAchievementWindow()
++    public void updateAchievementWindow(OculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
+     {
++        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
++        GL11.glMatrixMode(GL11.GL_PROJECTION);
++        GL11.glPushMatrix();
++        GL11.glMatrixMode(GL11.GL_MODELVIEW);
++        GL11.glPushMatrix();
++
+         if (this.theAchievement != null && this.achievementTime != 0L)
+         {
+             double var1 = (double)(Minecraft.getSystemTime() - this.achievementTime) / 3000.0D;
+@@ -96,7 +172,6 @@
+             }
+             else
+             {
+-                this.updateAchievementWindowScale();
+                 GL11.glDisable(GL11.GL_DEPTH_TEST);
+                 GL11.glDepthMask(false);
+                 double var3 = var1 * 2.0D;
+@@ -116,22 +191,25 @@
+ 
+                 var3 *= var3;
+                 var3 *= var3;
+-                int var5 = this.achievementWindowWidth - 160;
+-                int var6 = 0 - (int)(var3 * 36.0D);
++                int scale = 1; // TODO: Achievement popup window scale
++                int x = (int)ceil(this.achievementWindowWidth - (this.achievementWindowWidth * 0.65f));
++                int y = 0 - (int)(var3 * 36.0D) + (this.achievementWindowHeight / 3);
++                int width = 160 * scale;
++                int height = 32 * scale;
+                 GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+                 GL11.glEnable(GL11.GL_TEXTURE_2D);
+                 this.theGame.renderEngine.bindTexture("/achievement/bg.png");
+                 GL11.glDisable(GL11.GL_LIGHTING);
+-                this.drawTexturedModalRect(var5, var6, 96, 202, 160, 32);
++                this.drawTexturedModalRect(x, y, 96, 202, width, height);
+ 
+                 if (this.haveAchiement)
+                 {
+-                    this.theGame.fontRenderer.drawSplitString(this.achievementStatName, var5 + 30, var6 + 7, 120, -1);
++                    this.theGame.fontRenderer.drawSplitString(this.achievementStatName, x + 30, y + 7, 120, -1);
+                 }
+                 else
+                 {
+-                    this.theGame.fontRenderer.drawString(this.achievementGetLocalText, var5 + 30, var6 + 7, -256);
+-                    this.theGame.fontRenderer.drawString(this.achievementStatName, var5 + 30, var6 + 18, -1);
++                    this.theGame.fontRenderer.drawString(this.achievementGetLocalText, x + 30, y + 7, -256);
++                    this.theGame.fontRenderer.drawString(this.achievementStatName, x + 30, y + 18, -1);
+                 }
+ 
+                 RenderHelper.enableGUIStandardItemLighting();
+@@ -139,11 +217,17 @@
+                 GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+                 GL11.glEnable(GL11.GL_COLOR_MATERIAL);
+                 GL11.glEnable(GL11.GL_LIGHTING);
+-                this.itemRender.renderItemAndEffectIntoGUI(this.theGame.fontRenderer, this.theGame.renderEngine, this.theAchievement.theItemStack, var5 + 8, var6 + 8);
++                this.itemRender.renderItemAndEffectIntoGUI(this.theGame.fontRenderer, this.theGame.renderEngine, this.theAchievement.theItemStack, x + 8, y + 8);
+                 GL11.glDisable(GL11.GL_LIGHTING);
+                 GL11.glDepthMask(true);
+                 GL11.glEnable(GL11.GL_DEPTH_TEST);
+             }
+         }
++
++        GL11.glMatrixMode(GL11.GL_PROJECTION);
++        GL11.glPopMatrix();
++        GL11.glMatrixMode(GL11.GL_MODELVIEW);
++        GL11.glPopMatrix();
++        GL11.glPopAttrib();
+     }
+ }

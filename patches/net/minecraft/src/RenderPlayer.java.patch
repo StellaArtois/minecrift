@@ -1,0 +1,23 @@
+--- ./src/.minecraft_orig/net/minecraft/src/RenderPlayer.java	2013-05-22 01:14:06.415046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/RenderPlayer.java	2013-05-22 02:42:15.147096917 -0500
+@@ -17,6 +17,20 @@
+         this.modelArmor = new ModelBiped(0.5F);
+     }
+ 
++    public void setRenderHead(boolean render)
++    {
++        this.modelBipedMain._renderHead = render;
++        this.modelArmorChestplate._renderHead = render;
++        this.modelArmor._renderHead = render;
++    }
++
++    public void setRenderHeadWear(boolean render)
++    {
++        this.modelBipedMain._renderHeadWear = render;
++        this.modelArmorChestplate._renderHeadWear = render;
++        this.modelArmor._renderHeadWear = render;
++    }
++
+     protected void func_98191_a(EntityPlayer par1EntityPlayer)
+     {
+         this.loadDownloadableImageTexture(par1EntityPlayer.skinUrl, par1EntityPlayer.getTexture());

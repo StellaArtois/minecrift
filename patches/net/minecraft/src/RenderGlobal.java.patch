@@ -1,0 +1,55 @@
+--- ./src/.minecraft_orig/net/minecraft/src/RenderGlobal.java	2013-05-22 01:14:06.395046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/RenderGlobal.java	2013-05-22 02:42:15.151096917 -0500
+@@ -340,12 +340,14 @@
+                 var1 = var3;
+             }
+ 
++            // TODO: Set chunk renderer attribs for greater draw distance
+             this.prevReposX = -9999.0D;
+             this.prevReposY = -9999.0D;
+             this.prevReposZ = -9999.0D;
+             this.renderChunksWide = var1 / 16 + 1;
+             this.renderChunksTall = 16;
+             this.renderChunksDeep = var1 / 16 + 1;
++
+             this.worldRenderers = new WorldRenderer[this.renderChunksWide * this.renderChunksTall * this.renderChunksDeep];
+             this.sortedWorldRenderers = new WorldRenderer[this.renderChunksWide * this.renderChunksTall * this.renderChunksDeep];
+             int var4 = 0;
+@@ -471,9 +473,21 @@
+             for (var6 = 0; var6 < var5.size(); ++var6)
+             {
+                 var7 = (Entity)var5.get(var6);
+-
+-                if (var7.isInRangeToRenderVec3D(par1Vec3) && (var7.ignoreFrustumCheck || par2ICamera.isBoundingBoxInFrustum(var7.boundingBox) || var7.riddenByEntity == this.mc.thePlayer) && (var7 != this.mc.renderViewEntity || this.mc.gameSettings.thirdPersonView != 0 || this.mc.renderViewEntity.isPlayerSleeping()) && this.theWorld.blockExists(MathHelper.floor_double(var7.posX), 0, MathHelper.floor_double(var7.posZ)))
++                                                                                                                                                                                                                                   // TODO: Always render third person?
++                //if (var7.isInRangeToRenderVec3D(par1Vec3) && (var7.ignoreFrustumCheck || par2ICamera.isBoundingBoxInFrustum(var7.boundingBox) || var7.riddenByEntity == this.mc.thePlayer) && (var7 != this.mc.renderViewEntity || this.mc.gameSettings.thirdPersonView != 0/*true*/ || this.mc.renderViewEntity.isPlayerSleeping()) && this.theWorld.blockExists(MathHelper.floor_double(var7.posX), 0, MathHelper.floor_double(var7.posZ)))
++                if (var7.isInRangeToRenderVec3D(par1Vec3) && (var7.ignoreFrustumCheck || par2ICamera.isBoundingBoxInFrustum(var7.boundingBox) || var7.riddenByEntity == this.mc.thePlayer) && (var7 != this.mc.renderViewEntity || true || this.mc.renderViewEntity.isPlayerSleeping()) && this.theWorld.blockExists(MathHelper.floor_double(var7.posX), 0, MathHelper.floor_double(var7.posZ)))
+                 {
++                    Object renderPlayerClass = RenderManager.instance.getEntityRenderObject(this.mc.thePlayer);
++                    RenderPlayer renderPlayer = (RenderPlayer)renderPlayerClass;
++
++                    // TODO: Don't render the player head or mask
++                    if (var7 == this.mc.renderViewEntity && this.mc.gameSettings.thirdPersonView == 0)
++                    {
++                        renderPlayer.setRenderHead(false);
++                        if (!this.mc.gameSettings.renderHeadWear)
++                            renderPlayer.setRenderHeadWear(false);
++                    }
++
+                     ++this.countEntitiesRendered;
+ 
+                     if (var7.getClass() == EntityItemFrame.class)
+@@ -484,6 +498,13 @@
+                     this.renderedEntity = var7;
+                     RenderManager.instance.renderEntity(var7, par3);
+                     this.renderedEntity = null;
++
++                    if (var7 == this.mc.renderViewEntity && this.mc.gameSettings.thirdPersonView == 0)
++                    {
++                        renderPlayer.setRenderHead(true);
++                        if (!this.mc.gameSettings.renderHeadWear)
++                            renderPlayer.setRenderHeadWear(true);
++                    }
+                 }
+             }
+ 

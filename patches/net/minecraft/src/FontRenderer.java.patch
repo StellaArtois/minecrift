@@ -1,0 +1,33 @@
+--- ./src/.minecraft_orig/net/minecraft/src/FontRenderer.java	2013-05-22 01:14:06.627046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/FontRenderer.java	2013-05-22 02:42:15.151096917 -0500
+@@ -12,6 +12,7 @@
+ import java.util.Random;
+ import java.util.Set;
+ import javax.imageio.ImageIO;
++import net.minecraft.client.Minecraft;
+ import org.lwjgl.opengl.GL11;
+ 
+ public class FontRenderer
+@@ -19,6 +20,11 @@
+     /** Array of width of all the characters in default.png */
+     private float[] charWidth = new float[256];
+ 
++    public int _offsetX = 0;
++    public int _offsetY = 0;
++
++    public float zLevel = 0.0f;
++
+     /** the height in pixels of default text */
+     public int FONT_HEIGHT = 9;
+     public Random fontRandom = new Random();
+@@ -648,8 +654,8 @@
+             this.green = (float)(par4 & 255) / 255.0F;
+             this.alpha = (float)(par4 >> 24 & 255) / 255.0F;
+             GL11.glColor4f(this.red, this.blue, this.green, this.alpha);
+-            this.posX = (float)par2;
+-            this.posY = (float)par3;
++            this.posX = (float)par2 + _offsetX;
++            this.posY = (float)par3 + _offsetY;
+             this.renderStringAtPos(par1Str, par5);
+             return (int)this.posX;
+         }

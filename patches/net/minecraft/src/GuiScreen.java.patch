@@ -1,0 +1,91 @@
+--- ./src/.minecraft_orig/net/minecraft/src/GuiScreen.java	2013-05-22 01:14:06.659046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/GuiScreen.java	2013-05-22 02:42:15.147096917 -0500
+@@ -25,6 +25,9 @@
+     /** The height of the screen object. */
+     public int height;
+ 
++    public int _mouseX = 0;
++    public int _mouseY = 0;
++
+     /** A list of all the buttons in this container. */
+     protected List buttonList = new ArrayList();
+     public boolean allowUserInput = false;
+@@ -165,11 +168,11 @@
+     /**
+      * Delegates mouse and keyboard input.
+      */
+-    public void handleInput()
++    public void handleInput(int displayWidth, int displayHeight, boolean splitView)
+     {
+         while (Mouse.next())
+         {
+-            this.handleMouseInput();
++            this.handleMouseInput(displayWidth, displayHeight, splitView);
+         }
+ 
+         while (Keyboard.next())
+@@ -181,10 +184,37 @@
+     /**
+      * Handles mouse input.
+      */
+-    public void handleMouseInput()
++    public void handleMouseInput(int displayWidth, int displayHeight, boolean splitView)
+     {
+-        int var1 = Mouse.getEventX() * this.width / this.mc.displayWidth;
+-        int var2 = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
++        int actualDisplayWidth = displayWidth;
++
++        if (splitView)
++        {
++            actualDisplayWidth = displayWidth / 2;
++        }
++
++        int mouseEventX = Mouse.getEventX();
++        int mouseEventY = Mouse.getEventY();
++
++        if (splitView)
++        {
++            mouseEventX = _mouseX;
++            mouseEventY = _mouseY;
++        }
++
++        int mouseX = mouseEventX * this.width / actualDisplayWidth;
++        int mouseY = this.height - mouseEventY * this.height / displayHeight - 1;
++
++        if (splitView)
++        {
++            if (mouseEventX > actualDisplayWidth)
++            {
++                mouseEventX -= actualDisplayWidth; // TODO: Correct mouse reported pos as it is potentially over right viewport
++                mouseX = mouseEventX * this.width / actualDisplayWidth;
++            }
++        }
++
++        //System.out.println("Mouse X: " + mouseX + ", Mouse Y: " + mouseY);
+ 
+         if (Mouse.getEventButtonState())
+         {
+@@ -195,7 +225,7 @@
+ 
+             this.eventButton = Mouse.getEventButton();
+             this.field_85043_c = Minecraft.getSystemTime();
+-            this.mouseClicked(var1, var2, this.eventButton);
++            this.mouseClicked(mouseX, mouseY, this.eventButton);
+         }
+         else if (Mouse.getEventButton() != -1)
+         {
+@@ -205,12 +235,12 @@
+             }
+ 
+             this.eventButton = -1;
+-            this.mouseMovedOrUp(var1, var2, Mouse.getEventButton());
++            this.mouseMovedOrUp(mouseX, mouseY, Mouse.getEventButton());
+         }
+         else if (this.eventButton != -1 && this.field_85043_c > 0L)
+         {
+             long var3 = Minecraft.getSystemTime() - this.field_85043_c;
+-            this.func_85041_a(var1, var2, this.eventButton, var3);
++            this.func_85041_a(mouseX, mouseY, this.eventButton, var3);
+         }
+     }
+ 

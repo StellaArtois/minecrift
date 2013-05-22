@@ -1,0 +1,75 @@
+--- ./src/.minecraft_orig/net/minecraft/src/Entity.java	2013-05-22 01:14:06.363046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/Entity.java	2013-05-22 02:42:15.151096917 -0500
+@@ -56,6 +56,10 @@
+     public float prevRotationYaw;
+     public float prevRotationPitch;
+ 
++    /** OCULUS - Support Entity rotation Roll */
++    public float rotationRoll;
++    public float prevRotationRoll;
++
+     /** Axis aligned bounding box. */
+     public final AxisAlignedBB boundingBox;
+     public boolean onGround;
+@@ -343,6 +347,7 @@
+     {
+         this.rotationYaw = par1 % 360.0F;
+         this.rotationPitch = par2 % 360.0F;
++        this.rotationRoll = 0.0F;
+     }
+ 
+     /**
+@@ -368,6 +373,7 @@
+         float var4 = this.rotationYaw;
+         this.rotationYaw = (float)((double)this.rotationYaw + (double)par1 * 0.15D);
+         this.rotationPitch = (float)((double)this.rotationPitch - (double)par2 * 0.15D);
++        this.rotationRoll = 0.0F; // Set to zero roll
+ 
+         if (this.rotationPitch < -90.0F)
+         {
+@@ -381,6 +387,21 @@
+ 
+         this.prevRotationPitch += this.rotationPitch - var3;
+         this.prevRotationYaw += this.rotationYaw - var4;
++        this.prevRotationRoll = 0.0F;  // Set to zero roll
++    }
++
++    /**
++     * All arguments in degrees.
++     */
++    public void setAnglesAbsolute(float yawAngle, float pitchAngle, float rollAngle)
++    {
++        this.prevRotationYaw = this.rotationYaw;
++        this.prevRotationPitch = this.rotationPitch;
++        this.prevRotationRoll = this.rotationRoll;
++
++        this.rotationYaw = yawAngle;
++        this.rotationPitch = pitchAngle;
++        this.rotationRoll = rollAngle;
+     }
+ 
+     /**
+@@ -409,6 +430,7 @@
+         this.prevPosZ = this.posZ;
+         this.prevRotationPitch = this.rotationPitch;
+         this.prevRotationYaw = this.rotationYaw;
++        this.prevRotationRoll = this.rotationRoll;
+         int var2;
+ 
+         if (!this.worldObj.isRemote && this.worldObj instanceof WorldServer)
+@@ -1235,6 +1257,7 @@
+         this.prevPosZ = this.posZ = par5;
+         this.prevRotationYaw = this.rotationYaw = par7;
+         this.prevRotationPitch = this.rotationPitch = par8;
++        this.prevRotationRoll = this.rotationRoll = 0.0F; // TODO: Support rotation roll
+         this.ySize = 0.0F;
+         double var9 = (double)(this.prevRotationYaw - par7);
+ 
+@@ -1249,6 +1272,7 @@
+         }
+ 
+         this.setPosition(this.posX, this.posY, this.posZ);
++        // TODO: Pass on rotationRoll
+         this.setRotation(par7, par8);
+     }
+ 

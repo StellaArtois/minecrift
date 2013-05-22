@@ -1,0 +1,14 @@
+--- ./src/.minecraft_orig/net/minecraft/src/GuiContainerCreative.java	2013-05-22 01:14:06.355046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/GuiContainerCreative.java	2013-05-22 02:42:15.147096917 -0500
+@@ -548,9 +548,9 @@
+     /**
+      * Handles mouse input.
+      */
+-    public void handleMouseInput()
++    public void handleMouseInput(int displayWidth, int displayHeight, boolean splitView)
+     {
+-        super.handleMouseInput();
++        super.handleMouseInput(displayWidth, displayHeight, splitView);
+         int var1 = Mouse.getEventDWheel();
+ 
+         if (var1 != 0 && this.needsScrollBars())

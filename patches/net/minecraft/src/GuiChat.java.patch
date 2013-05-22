@@ -1,0 +1,14 @@
+--- ./src/.minecraft_orig/net/minecraft/src/GuiChat.java	2013-05-22 01:14:06.471046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/GuiChat.java	2013-05-22 02:42:15.147096917 -0500
+@@ -132,9 +132,9 @@
+     /**
+      * Handles mouse input.
+      */
+-    public void handleMouseInput()
++    public void handleMouseInput(int displayWidth, int displayHeight, boolean splitView)
+     {
+-        super.handleMouseInput();
++        super.handleMouseInput(displayWidth, displayHeight, splitView);
+         int var1 = Mouse.getEventDWheel();
+ 
+         if (var1 != 0)

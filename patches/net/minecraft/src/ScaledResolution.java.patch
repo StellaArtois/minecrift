@@ -1,0 +1,83 @@
+--- ./src/.minecraft_orig/net/minecraft/src/ScaledResolution.java	2013-05-22 01:14:06.667046000 -0500
++++ ./modsrc/minecraft/net/minecraft/src/ScaledResolution.java	2013-05-22 02:42:15.151096917 -0500
+@@ -7,20 +7,26 @@
+     private double scaledWidthD;
+     private double scaledHeightD;
+     private int scaleFactor;
++    //private double scaleFactorD;
+ 
+-    public ScaledResolution(GameSettings par1GameSettings, int par2, int par3)
++    public ScaledResolution(GameSettings gameSettings, int displayWidth, int displayHeight)
+     {
+-        this.scaledWidth = par2;
+-        this.scaledHeight = par3;
++        this(gameSettings, displayWidth, displayHeight, false);
++    }
++
++    public ScaledResolution(GameSettings gameSettings, int displayWidth, int displayHeight, boolean trace)
++    {
++        this.scaledWidth = displayWidth;
++        this.scaledHeight = displayHeight;
+         this.scaleFactor = 1;
+-        int var4 = par1GameSettings.guiScale;
++        int guiScale = gameSettings.guiScale;
+ 
+-        if (var4 == 0)
++        if (guiScale == 0)
+         {
+-            var4 = 1000;
++            guiScale = 1000;
+         }
+ 
+-        while (this.scaleFactor < var4 && this.scaledWidth / (this.scaleFactor + 1) >= 320 && this.scaledHeight / (this.scaleFactor + 1) >= 240)
++        while (this.scaleFactor < guiScale && this.scaledWidth / (this.scaleFactor + 1) >= 320 && this.scaledHeight / (this.scaleFactor + 1) >= 240)
+         {
+             ++this.scaleFactor;
+         }
+@@ -29,6 +35,36 @@
+         this.scaledHeightD = (double)this.scaledHeight / (double)this.scaleFactor;
+         this.scaledWidth = MathHelper.ceiling_double_int(this.scaledWidthD);
+         this.scaledHeight = MathHelper.ceiling_double_int(this.scaledHeightD);
++
++        if (trace)
++        {
++         //   System.out.println(String.format("Scaled res: InputWidth=%d, InputHeight=%d", new Object[] {Integer.valueOf(displayWidth), Integer.valueOf(displayHeight)}));
++         //   System.out.println(String.format("Scaled res: Width=%d, Height=%d, Scalefactor=%d", new Object[] {Integer.valueOf(this.scaledWidth), Integer.valueOf(this.scaledHeight), Integer.valueOf(this.scaleFactor)}));
++        }
++    }
++
++    // TODO: Add the ability for fixed render scale
++    public ScaledResolution(int scaleFactor, int displayWidth, int displayHeight)
++    {
++        this(scaleFactor, displayWidth, displayHeight, false);
++    }
++
++    public ScaledResolution(int scaleFactor, int displayWidth, int displayHeight, boolean trace)
++    {
++        this.scaledWidth = displayWidth;
++        this.scaledHeight = displayHeight;
++        this.scaleFactor = scaleFactor;
++
++        this.scaledWidthD = (double)this.scaledWidth / (double)this.scaleFactor;
++        this.scaledHeightD = (double)this.scaledHeight / (double)this.scaleFactor;
++        this.scaledWidth = MathHelper.ceiling_double_int(this.scaledWidthD);
++        this.scaledHeight = MathHelper.ceiling_double_int(this.scaledHeightD);
++
++        if (trace)
++        {
++          //  System.out.println(String.format("Scaled res: InputWidth=%d, InputHeight=%d", new Object[] {Integer.valueOf(displayWidth), Integer.valueOf(displayHeight)}));
++          //  System.out.println(String.format("Scaled res: Width=%d, Height=%d, Scalefactor=%.4f", new Object[] {Integer.valueOf(this.scaledWidth), Integer.valueOf(this.scaledHeight), Double.valueOf(this.scaleFactorD)}));
++        }
+     }
+ 
+     public int getScaledWidth()
+@@ -55,4 +91,9 @@
+     {
+         return this.scaleFactor;
+     }
++
++//    public double getScaleFactorD()
++//    {
++//        return this.scaleFactorD;
++//    }
+ }
