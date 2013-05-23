@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/RenderGlobal.java	2013-05-22 01:14:06.395046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/RenderGlobal.java	2013-05-22 02:42:15.151096917 -0500
+--- a/net/minecraft/src/RenderGlobal.java
++++ b/net/minecraft/src/RenderGlobal.java
 @@ -340,12 +340,14 @@
                  var1 = var3;
              }

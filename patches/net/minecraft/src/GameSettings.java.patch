@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/GameSettings.java	2013-05-22 01:14:06.535046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/GameSettings.java	2013-05-22 02:42:15.147096917 -0500
+--- a/net/minecraft/src/GameSettings.java
++++ b/net/minecraft/src/GameSettings.java
 @@ -28,6 +28,7 @@
      public float musicVolume = 1.0F;
      public float soundVolume = 1.0F;

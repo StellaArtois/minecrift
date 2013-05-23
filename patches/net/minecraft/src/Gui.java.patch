@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/Gui.java	2013-05-22 01:14:06.483046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/Gui.java	2013-05-22 02:42:15.147096917 -0500
+--- a/net/minecraft/src/Gui.java
++++ b/net/minecraft/src/Gui.java
 @@ -5,6 +5,7 @@
  public class Gui
  {

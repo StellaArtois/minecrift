@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/GuiAchievement.java	2013-05-22 01:14:06.439046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/GuiAchievement.java	2013-05-22 02:42:15.151096917 -0500
+--- a/net/minecraft/src/GuiAchievement.java
++++ b/net/minecraft/src/GuiAchievement.java
 @@ -1,9 +1,13 @@
  package net.minecraft.src;
  

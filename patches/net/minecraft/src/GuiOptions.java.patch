@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/GuiOptions.java	2013-05-22 01:14:06.539046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/GuiOptions.java	2013-05-22 02:42:15.147096917 -0500
+--- a/net/minecraft/src/GuiOptions.java
++++ b/net/minecraft/src/GuiOptions.java
 @@ -38,8 +38,13 @@
          for (int var5 = 0; var5 < var4; ++var5)
          {

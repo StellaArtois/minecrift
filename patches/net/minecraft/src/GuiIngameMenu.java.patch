@@ -1,5 +1,5 @@
---- ./src/.minecraft_orig/net/minecraft/src/GuiIngameMenu.java	2013-05-22 01:14:06.467046000 -0500
-+++ ./modsrc/minecraft/net/minecraft/src/GuiIngameMenu.java	2013-05-22 02:42:15.147096917 -0500
+--- a/net/minecraft/src/GuiIngameMenu.java
++++ b/net/minecraft/src/GuiIngameMenu.java
 @@ -13,6 +13,7 @@
       */
      public void initGui()
