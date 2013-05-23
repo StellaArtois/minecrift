@@ -44,9 +44,12 @@ def main(mcp_dir):
     print("Applying Changes...")
 
     src_dir = os.path.join(mcp_dir, "src","minecraft")
+    mod_bak_dir = os.path.join(mcp_dir, "src","minecraft-bak")
     bak_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
     
-    shutil.rmtree( src_dir, True )
+    print("Backing up src/minecraft to src/minecraft-bak")
+    shutil.rmtree( mod_bak_dir, True )
+    shutil.move( src_dir, mod_bak_dir )
     shutil.copytree( bak_dir, src_dir )
 
     #apply patches
