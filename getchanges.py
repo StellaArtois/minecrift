@@ -12,58 +12,52 @@ def cmdsplit(args):
         args = args.replace('\\', '\\\\')
     return shlex.split(args)
 
-def create_patch( target_dir, src_file, mod_file, patch_file ):
+def create_patch( target_dir, src_file, mod_file, label, patch_file ):
     
     if os.name == 'nt':
         diff = os.path.abspath(os.path.join(base_dir, 'bin', 'diff.exe'))
-        cmd = cmdsplit('"%s" -u "%s" "%s"' % (diff, src_file, mod_file ))
     else:
-        cmd = cmdsplit('diff -u "%s" "%s"' % ( src_file, mod_file ) )
+        diff = "diff"
+
+    cmd = cmdsplit('"%s" -u --label "a/%s" "%s" --label "b/%s" "%s"' % (diff, label, src_file, label, mod_file ))
 
     process = subprocess.Popen(cmd, cwd=target_dir, bufsize=-1, stdout=subprocess.PIPE)
     stdout, stderr = process.communicate()
-    with open( patch_file, 'w') as out:
-        out.write(stdout)
+    if stdout:
+        with open( patch_file, 'w') as out:
+            out.write(stdout)
 
 def main(mcp_dir):
-    sys.path.append(mcp_dir)
-    os.chdir(mcp_dir)
-    from runtime.getchangedsrc import getchangedsrc
-    getchangedsrc( None, False, False )
-    os.chdir( base_dir )
+    new_src_dir    = os.path.join( base_dir , "src" )
+    patch_base_dir = os.path.join( base_dir , "patches" )
 
-    new_src_dir = os.path.join( base_dir , "src" )
-    patch_dir = os.path.join( base_dir , "patches" )
-
-    mod_src_dir = os.path.join( mcp_dir , "modsrc", "minecraft" )
+    mod_src_dir = os.path.join( mcp_dir , "src", "minecraft" )
     org_src_dir = os.path.join( mcp_dir , "src", ".minecraft_orig" )
 
     for src_dir, dirs, files in os.walk(mod_src_dir):
-        new_dir = src_dir.replace(mod_src_dir, new_src_dir)
-        mod_dir = src_dir.replace(mod_src_dir, org_src_dir)
+        pkg       = os.path.relpath(src_dir,mod_src_dir)
+        new_dir   = os.path.join( new_src_dir,    pkg )
+        mod_dir   = os.path.join( org_src_dir,    pkg )
+        patch_dir = os.path.join( patch_base_dir, pkg )
         if not os.path.exists(new_dir):
             os.mkdir(new_dir)
+        if not os.path.exists(patch_dir):
+            os.mkdir(patch_dir)
         for file_ in files:
-            src_file = os.path.join(src_dir, file_)
-            new_file = os.path.join(new_dir, file_)
+            mod_file = os.path.join(src_dir, file_)
             org_file = os.path.join(mod_dir, file_)
+
             if os.path.exists(org_file):
-                patch_file_dir = src_dir.replace( mod_src_dir, patch_dir)
-                try:
-                    os.makedirs( patch_file_dir )
-                except os.error as e:
-                    pass
-                patch_file = os.path.join(patch_file_dir,file_+".patch")
+                patch_file = os.path.join(patch_dir,file_+".patch")
+                label = pkg.replace("\\","/") + "/" + file_ #patch label always has "/"
 
-                mod_file = src_file.replace( mcp_dir, "." )
-                org_file = org_file.replace( mcp_dir, "." )
-
-                create_patch( mcp_dir, org_file, mod_file, patch_file )
+                create_patch( mcp_dir, org_file, mod_file, label, patch_file )
             else:
+                new_file = os.path.join(new_dir, file_)
                 #new class file, just replace
                 if os.path.exists( new_file ):
                     os.remove( new_file )
-                shutil.copy(src_file, new_dir)
+                shutil.copy(mod_file, new_dir)
 
     
 if __name__ == '__main__':

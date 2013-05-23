@@ -14,9 +14,9 @@ def cmdsplit(args):
 def apply_patch( mcp_dir, patch_file, target_dir ):
     if os.name == 'nt':
         applydiff = os.path.abspath(os.path.join(mcp_dir, 'runtime', 'bin', 'applydiff.exe'))
-        cmd = cmdsplit('"%s" -uf -p3 -i "%s"' % (applydiff, patch_file ))
+        cmd = cmdsplit('"%s" -uf -p1 -i "%s"' % (applydiff, patch_file ))
     else:
-        cmd = cmdsplit('patch -p3 -i "%s" ' % patch_file )
+        cmd = cmdsplit('patch -p1 -i "%s" ' % patch_file )
 
     process = subprocess.Popen(cmd, cwd=target_dir, bufsize=-1)
     process.communicate()
