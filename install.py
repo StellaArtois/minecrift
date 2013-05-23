@@ -70,7 +70,7 @@ def download_deps( mcp_dir ):
 
     MinecraftDownload = "http://s3.amazonaws.com/Minecraft.Download/versions/"
     download_file( MinecraftDownload+ "1.5.2/1.5.2.jar", os.path.join(bin,"minecraft.jar"), "6897c3287fb971c9f362eb3ab20f5ddd" )
-    download_file( MinecraftDownload+ "1.5.2/minecraft_server.1.5.2.jar", os.path.join(jars,"minecraft_server.jar"),"c4e1bf89e834bd3670c7bf8f13874bc6" ) 
+    #download_file( MinecraftDownload+ "1.5.2/minecraft_server.1.5.2.jar", os.path.join(jars,"minecraft_server.jar"),"c4e1bf89e834bd3670c7bf8f13874bc6" ) 
 
     download_file( "http://optifine.net/download.php?f=OptiFine_1.5.2_HD_U_D3.zip", os.path.join(bin,"optifine.zip"), "de96e9633842957bf2c25cc59151e3e1" )
 
@@ -108,8 +108,8 @@ def main(mcp_dir):
     sys.path.append(mcp_dir)
     os.chdir(mcp_dir)
     from runtime.decompile import decompile
-    #         Conf  JAD    CSV    -r    -d     -a     -n     -p     -o     -l     -g     -c     -s
-    decompile(None, False, False, True, False, False, False, False, False, False, False, False, False )
+    #         Conf  JAD    CSV    -r     -d     -a     -n     -p     -o     -l     -g     -c     -s
+    decompile(None, False, False, False, False, False, False, False, False, False, False, True, False )
 
     os.chdir( base_dir )
 
