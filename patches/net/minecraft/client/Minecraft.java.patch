@@ -385,7 +385,7 @@
                      }
                  }
              }
-@@ -1620,9 +1591,263 @@
+@@ -1620,9 +1591,313 @@
                          {
                              if (Keyboard.getEventKey() == 1)
                              {
@@ -446,7 +446,7 @@
 +                                    {
 +                                        this.gameSettings.useSupersample = !this.gameSettings.useSupersample;
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders                                    }
++                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
 +                                    }
 +                                }
 +
@@ -516,6 +516,56 @@
 +                                    this.gameSettings.saveOptions();
 +                                }
 +
++                                // FOV+
++                                if (Keyboard.getEventKey() == Keyboard.KEY_PERIOD && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
++                                {
++                                    if (Keyboard.isKeyDown(Keyboard.KEY_LMENU))
++                                    {
++                                        // Distortion fit point
++                                        gameSettings.distortionFitPoint += 1;
++                                        if (gameSettings.distortionFitPoint > 14)
++                                            gameSettings.distortionFitPoint = 14;
++                                        this.gameSettings.saveOptions();
++                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                    }
++                                    else
++                                    {
++                                        // FOV
++                                        gameSettings.fovScaleFactor += 0.001f;
++                                        this.gameSettings.saveOptions();
++                                    }
++                                }
++
++                                // FOV-
++                                if (Keyboard.getEventKey() == Keyboard.KEY_COMMA && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
++                                {
++                                    if (Keyboard.isKeyDown(Keyboard.KEY_LMENU))
++                                    {
++                                        // Distortion fit point
++                                        gameSettings.distortionFitPoint -= 1;
++                                        if (gameSettings.distortionFitPoint < 0)
++                                            gameSettings.distortionFitPoint = 0;
++                                        this.gameSettings.saveOptions();
++                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                    }
++                                    else
++                                    {
++                                        // FOV
++                                        gameSettings.fovScaleFactor -= 0.001f;
++                                        this.gameSettings.saveOptions();
++                                    }
++                                }
++
++                                // Cycle head track sensitivity
++                                if (Keyboard.getEventKey() == Keyboard.KEY_V && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
++                                {
++                                    this.gameSettings.headTrackSensitivity += 0.1f;
++                                    if (this.gameSettings.headTrackSensitivity > 4.05f)
++                                    {
++                                        this.gameSettings.headTrackSensitivity = 0.5f;
++                                    }
++                                    this.gameSettings.saveOptions();
++                                }
 +//                                float change = 0.2f;
 +//
 +//                                // Yaw change
@@ -650,7 +700,7 @@
                              if (Keyboard.getEventKey() == 31 && Keyboard.isKeyDown(61))
                              {
                                  this.forceReload();
-@@ -1667,10 +1892,14 @@
+@@ -1667,10 +1942,14 @@
                                  this.gameSettings.hideGUI = !this.gameSettings.hideGUI;
                              }
  
@@ -667,7 +717,7 @@
                              }
  
                              if (Keyboard.getEventKey() == 63)
-@@ -1699,7 +1928,7 @@
+@@ -1699,7 +1978,7 @@
                              }
                          }
  
@@ -676,7 +726,7 @@
                          {
                              if (Keyboard.getEventKey() == 11)
                              {
-@@ -1883,6 +2112,8 @@
+@@ -1883,6 +2162,8 @@
  
          this.mcProfiler.endSection();
          this.systemTime = getSystemTime();

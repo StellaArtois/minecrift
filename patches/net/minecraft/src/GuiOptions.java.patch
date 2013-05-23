@@ -8,9 +8,9 @@
 -            if (var6.getEnumFloat())
 +            if (var6.getEnumString().equalsIgnoreCase("options.fov"))    // Replace FOV slider with 'Minecrift settings' button
 +            {
-+                // Oculus settings
-+                GuiSmallButton var7 = new GuiSmallButton(666, this.width / 2 - 155 + var2 % 2 * 160, this.height / 6 - 12 + 24 * (var2 >> 1), var6, "Minecrift Settings...");
-+                this.buttonList.add(var7);
++                // TODO: Oculus settings
++//                GuiSmallButton var7 = new GuiSmallButton(666, this.width / 2 - 155 + var2 % 2 * 160, this.height / 6 - 12 + 24 * (var2 >> 1), var6, "Minecrift Settings...");
++//                this.buttonList.add(var7);
 +            }
 +            else if (var6.getEnumFloat())
              {

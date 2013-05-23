@@ -8,7 +8,7 @@
      public boolean invertMouse = false;
      public int renderDistance = 0;
      public boolean viewBobbing = true;
-@@ -133,6 +134,27 @@
+@@ -133,6 +134,30 @@
      public boolean enableVsync = true;
      public boolean hideServerAddress = false;
  
@@ -23,6 +23,9 @@
 +    public float hudScale = 1.0f;
 +    public boolean allowMousePitchInput = false;
 +    public float hudDistance = 1.0f;
++    public float fovScaleFactor = 1.0f;
++    public int distortionFitPoint = 5;
++    public float headTrackSensitivity = 1.0f;
 +
 +    public boolean lockHud = false;
 +    public float lastHudYaw = 1000.0f;
@@ -36,7 +39,7 @@
      /**
       * Whether to show advanced information on item tooltips, toggled by F3+H
       */
-@@ -173,7 +195,7 @@
+@@ -173,7 +198,7 @@
      public int thirdPersonView;
  
      /** true if debug info should be displayed instead of version */
@@ -45,7 +48,7 @@
      public boolean showDebugProfilerChart;
  
      /** The lastServer string. */
-@@ -211,9 +233,9 @@
+@@ -211,9 +236,9 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
@@ -57,7 +60,7 @@
          this.showDebugProfilerChart = false;
          this.lastServer = "";
          this.noclip = false;
-@@ -240,9 +262,9 @@
+@@ -240,9 +265,9 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
@@ -69,7 +72,7 @@
          this.showDebugProfilerChart = false;
          this.lastServer = "";
          this.noclip = false;
-@@ -1677,6 +1699,58 @@
+@@ -1677,6 +1702,73 @@
                          this.mouseSensitivity = this.parseFloat(var3[1]);
                      }
  
@@ -123,12 +126,27 @@
 +                    {
 +                        this.superSampleScaleFactor = this.parseFloat(var3[1]);
 +                    }
++
++                    if (var3[0].equals("fovScaleFactor"))
++                    {
++                        this.fovScaleFactor = this.parseFloat(var3[1]);
++                    }
++
++                    if (var3[0].equals("distortionFitPoint"))
++                    {
++                        this.distortionFitPoint = Integer.parseInt(var3[1]);
++                    }
++
++                    if (var3[0].equals("headTrackSensitivity"))
++                    {
++                        this.headTrackSensitivity = this.parseFloat(var3[1]);
++                    }
 +                    //////
 +
                      if (var3[0].equals("fov"))
                      {
                          this.fovSetting = this.parseFloat(var3[1]);
-@@ -2365,6 +2439,18 @@
+@@ -2365,6 +2457,21 @@
              var5.println("difficulty:" + this.difficulty);
              var5.println("fancyGraphics:" + this.fancyGraphics);
              var5.println("ao:" + this.ambientOcclusion);
@@ -143,6 +161,9 @@
 +            var5.println("hudDistance:" + this.hudDistance);
 +            var5.println("useSupersample:" + this.useSupersample);
 +            var5.println("superSampleScaleFactor:" + this.superSampleScaleFactor);
++            var5.println("fovScaleFactor:" + this.fovScaleFactor);
++            var5.println("distortionFitPoint:" + this.distortionFitPoint);
++            var5.println("headTrackSensitivity:" + this.headTrackSensitivity);
 +
              var5.println("clouds:" + this.clouds);
              var5.println("skin:" + this.skin);

@@ -263,7 +263,7 @@
 -            GL11.glRotatef(var2.prevRotationYaw + (var2.rotationYaw - var2.prevRotationYaw) * par1 + 180.0F, 0.0F, 1.0F, 0.0F);
 +            if (oculusRift.use)
 +            {
-+                this.prevCamRoll = this.camRoll = oculusRift.getRollDegrees_LH();
++                this.prevCamRoll = this.camRoll;// = oculusRift.getRollDegrees_LH();
 +                GL11.glRotatef(this.camRoll, 0.0F, 0.0F, 1.0F);
 +            }
 +
@@ -383,7 +383,7 @@
 +
 +        if (oculusRift.use)
 +        {
-+            playerHeight = 1.76f;//oculusRift.getEyeHeight();    // TODO Set player height here
++            playerHeight = 1.74f;//oculusRift.getEyeHeight();    // TODO Set player height here
 +            eyeHeightOffset = entity.yOffset - (playerHeight - neckBaseToEyeHeight);
 +
 +            if (this.mc.gameSettings.thirdPersonView == 0)
@@ -496,7 +496,7 @@
              }
          }
          else
-@@ -1032,35 +1170,103 @@
+@@ -1032,35 +1170,117 @@
              this.prevFrameTime = Minecraft.getSystemTime();
          }
  
@@ -542,6 +542,12 @@
 +                    float mouseSensitivityMultiplier2 = mouseSensitivityMultiplier1 * mouseSensitivityMultiplier1 * mouseSensitivityMultiplier1 * 8.0F;
 +                    adjustedMouseDeltaX = (float)this.mc.mouseHelper.deltaX * mouseSensitivityMultiplier2;
 +                    adjustedMouseDeltaY = (float)this.mc.mouseHelper.deltaY * mouseSensitivityMultiplier2;
++                    byte yDirection = -1;
++
++                    if (this.mc.gameSettings.invertMouse)
++                    {
++                        yDirection = 1;
++                    }
 +
 +                    if (this.mc.gameSettings.smoothCamera)
 +                    {
@@ -549,39 +555,47 @@
 +                        float smoothTicks = renderPartialTicks - this.smoothCamPartialTicks;
 +                        this.smoothCamPartialTicks = renderPartialTicks;
 +                        adjustedMouseDeltaX = this.smoothCamFilterX * smoothTicks;
-+                        adjustedMouseDeltaY = this.smoothCamFilterY * smoothTicks;
++                        adjustedMouseDeltaY = this.smoothCamFilterY * smoothTicks * (float)yDirection;
 +                    }
 +
 +                    totalMouseYawDelta += adjustedMouseDeltaX;
 +                    totalMouseYawDelta %= 360;
 +
 +                    // Allow mouse pitch delta
-+                    totalMousePitchDelta += adjustedMouseDeltaY;
++                    totalMousePitchDelta += (adjustedMouseDeltaY * (float)yDirection);
 +                    if (totalMousePitchDelta > 180.0f)
 +                        totalMousePitchDelta = 180.0f;
 +                    else if (totalMousePitchDelta < -180.0f)
 +                        totalMousePitchDelta = -180.f;
 +                }
 +
-+                oculusYaw = (totalMouseYawDelta + oculusRift.getYawDegrees_LH()) % 360;
++                oculusYaw = (totalMouseYawDelta + (oculusRift.getYawDegrees_LH() * this.mc.gameSettings.headTrackSensitivity)) % 360;
 +                if (this.mc.gameSettings.allowMousePitchInput)
 +                {
-+                    oculusPitch = (totalMousePitchDelta + oculusRift.getPitchDegrees_LH());
-+
-+                    // Correct for gimbal lock prevention
-+                    if (oculusPitch > oculusRift.MAXPITCH)
-+                        oculusPitch = oculusRift.MAXPITCH;
-+                    else if (oculusPitch < -oculusRift.MAXPITCH)
-+                        oculusPitch = -oculusRift.MAXPITCH;
++                    oculusPitch = (totalMousePitchDelta + (oculusRift.getPitchDegrees_LH() * this.mc.gameSettings.headTrackSensitivity));
 +                }
 +                else
 +                {
-+                    oculusPitch = oculusRift.getPitchDegrees_LH();
++                    oculusPitch = oculusRift.getPitchDegrees_LH() * this.mc.gameSettings.headTrackSensitivity;
 +                }
++
++                // Correct for gimbal lock prevention
++                if (oculusPitch > oculusRift.MAXPITCH)
++                    oculusPitch = oculusRift.MAXPITCH;
++                else if (oculusPitch < -oculusRift.MAXPITCH)
++                    oculusPitch = -oculusRift.MAXPITCH;
++                                                             // Roll multiplier is a one-way trip to barf-ville!
++                float roll = oculusRift.getRollDegrees_LH() * this.mc.gameSettings.headTrackSensitivity;
++
++                if (roll > oculusRift.MAXROLL)
++                    roll = oculusRift.MAXROLL;
++                else if (roll < -oculusRift.MAXROLL)
++                    roll = -oculusRift.MAXROLL;
 +
 +                if (this.mc.thePlayer != null)
 +                {
-+                    this.mc.thePlayer.setAnglesAbsolute(oculusYaw, oculusPitch, oculusRift.getRollDegrees_LH());
++                    this.mc.thePlayer.setAnglesAbsolute(oculusYaw, oculusPitch, roll);
++                    this.camRoll = roll;
 +                    //System.out.println(String.format("Set angles: %.2f, %.2f, %.2f", new Object[] {Float.valueOf(oculusYaw), Float.valueOf(oculusRift.getPitch()), Float.valueOf(oculusRift.getRoll())}));
 +                }
              }
@@ -623,7 +637,7 @@
              }
          }
  
-@@ -1069,44 +1275,49 @@
+@@ -1069,44 +1289,49 @@
          if (!this.mc.skipRenderWorld)
          {
              anaglyphEnable = this.mc.gameSettings.anaglyph;
@@ -684,7 +698,7 @@
                  this.renderEndNanoTime = System.nanoTime();
              }
  
-@@ -1116,24 +1327,33 @@
+@@ -1116,24 +1341,33 @@
  
                  try
                  {
@@ -727,7 +741,7 @@
  
          this.waitForServerThread();
  
-@@ -1143,7 +1363,7 @@
+@@ -1143,7 +1377,7 @@
              this.lastShowDebugInfo = this.mc.gameSettings.showDebugInfo;
          }
  
@@ -736,7 +750,7 @@
          {
              this.showLagometer(this.mc.mcProfiler.timeTickNano, this.mc.mcProfiler.timeUpdateChunksNano);
          }
-@@ -1440,18 +1660,24 @@
+@@ -1440,18 +1674,24 @@
              var4.printStackTrace();
          }
      }
@@ -758,17 +772,17 @@
 +            System.out.println(var2 + ": " + var3);
          }
 +    }
-+
  
 -        GL11.glEnable(GL11.GL_CULL_FACE);
 -        GL11.glEnable(GL11.GL_DEPTH_TEST);
++
 +    public void renderWorld(float renderPartialTicks, long nextFrameTime, OculusRift oculusRift, GuiAchievement guiAchievement, boolean renderGUI)
 +    {
 +        this.mc.mcProfiler.startSection("lightTex");
  
          if (this.mc.renderViewEntity == null)
          {
-@@ -1459,20 +1685,225 @@
+@@ -1459,20 +1699,241 @@
          }
  
          this.mc.mcProfiler.endStartSection("pick");
@@ -792,11 +806,27 @@
 +        EyeRenderParams eyeRenderParams = null;
 +        if (this.mc.gameSettings.useSupersample)
 +        {
-+            eyeRenderParams = oculusRift.getEyeRenderParams(0, 0, (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor), 0.05F, this.farPlaneDistance * 2.0F);
++            eyeRenderParams = oculusRift.getEyeRenderParams(0,
++                    0,
++                    (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor),
++                    (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor),
++                    0.05F,
++                    this.farPlaneDistance * 2.0F,
++                    this.mc.gameSettings.fovScaleFactor,
++                    getDistortionFitX(),
++                    getDistortionFitY());
 +        }
 +        else
 +        {
-+            eyeRenderParams = oculusRift.getEyeRenderParams(0, 0, this.mc.displayWidth, this.mc.displayHeight, 0.05F, this.farPlaneDistance * 2.0F);
++            eyeRenderParams = oculusRift.getEyeRenderParams(0,
++                    0,
++                    this.mc.displayWidth,
++                    this.mc.displayHeight,
++                    0.05F,
++                    this.farPlaneDistance * 2.0F,
++                    this.mc.gameSettings.fovScaleFactor,
++                    getDistortionFitX(),
++                    getDistortionFitY());
 +        }
 +
 +        if (this.mc.displayWidth != _previousDisplayWidth || this.mc.displayHeight != _previousDisplayHeight || !_FBOInitialised)
@@ -1003,7 +1033,7 @@
  
                  if (anaglyphField == 0)
                  {
-@@ -1483,17 +1914,89 @@
+@@ -1483,17 +1944,89 @@
                      GL11.glColorMask(true, false, false, false);
                  }
              }
@@ -1099,7 +1129,7 @@
  
              if (!Config.isSkyEnabled() && !Config.isSunMoonEnabled() && !Config.isStarsEnabled())
              {
-@@ -1501,13 +2004,13 @@
+@@ -1501,13 +2034,13 @@
              }
              else
              {
@@ -1116,7 +1146,7 @@
  
              if (this.mc.gameSettings.ambientOcclusion != 0)
              {
-@@ -1515,17 +2018,19 @@
+@@ -1515,17 +2048,19 @@
              }
  
              this.mc.mcProfiler.endStartSection("culling");
@@ -1126,10 +1156,10 @@
 +            Frustrum frustrum = new Frustrum();
 +            frustrum.setPosition(renderViewEntityX , renderViewEntityY, renderViewEntityZ);
 +
++
++            this.mc.renderGlobal.clipRenderersByFrustum(frustrum, renderPartialTicks);
  
 -            if (var13 == 0)
-+            this.mc.renderGlobal.clipRenderersByFrustum(frustrum, renderPartialTicks);
-+
 +            if (renderSceneNumber == 0/* || oculusRift.use*/)
              {
                  this.mc.mcProfiler.endStartSection("updatechunks");
@@ -1142,7 +1172,7 @@
  
                      if (var15 < 0L || var15 > 1000000000L)
                      {
-@@ -1534,18 +2039,18 @@
+@@ -1534,18 +2069,18 @@
                  }
              }
  
@@ -1165,7 +1195,7 @@
              GL11.glShadeModel(GL11.GL_FLAT);
              boolean var16 = Reflector.ForgeHooksClient.exists();
              EntityPlayer var18;
-@@ -1560,35 +2065,34 @@
+@@ -1560,35 +2095,34 @@
                      Reflector.callVoid(Reflector.ForgeHooksClient_setRenderPass, new Object[] {Integer.valueOf(0)});
                  }
  
@@ -1213,7 +1243,7 @@
                          }
                      }
                      GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -1599,7 +2103,7 @@
+@@ -1599,7 +2133,7 @@
              GL11.glEnable(GL11.GL_CULL_FACE);
              GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
              GL11.glDepthMask(true);
@@ -1222,7 +1252,7 @@
              GL11.glEnable(GL11.GL_BLEND);
              GL11.glDisable(GL11.GL_CULL_FACE);
              this.mc.renderEngine.bindTexture("/terrain.png");
-@@ -1615,7 +2119,7 @@
+@@ -1615,7 +2149,7 @@
                  }
  
                  GL11.glColorMask(false, false, false, false);
@@ -1231,7 +1261,7 @@
  
                  if (this.mc.gameSettings.anaglyph)
                  {
-@@ -1635,7 +2139,7 @@
+@@ -1635,7 +2169,7 @@
  
                  if (var17 > 0)
                  {
@@ -1240,7 +1270,7 @@
                  }
  
                  GL11.glShadeModel(GL11.GL_FLAT);
-@@ -1643,27 +2147,27 @@
+@@ -1643,27 +2177,27 @@
              else
              {
                  this.mc.mcProfiler.endStartSection("water");
@@ -1275,7 +1305,7 @@
                      }
                  }
                  GL11.glEnable(GL11.GL_ALPHA_TEST);
-@@ -1672,21 +2176,21 @@
+@@ -1672,21 +2206,21 @@
              this.mc.mcProfiler.endStartSection("destroyProgress");
              GL11.glEnable(GL11.GL_BLEND);
              GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
@@ -1302,7 +1332,7 @@
              }
  
              this.mc.mcProfiler.endStartSection("hand");
-@@ -1694,19 +2198,1165 @@
+@@ -1694,20 +2228,1166 @@
              if (this.cameraZoom == 1.0D)
              {
                  GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
@@ -1317,11 +1347,6 @@
 -                this.mc.mcProfiler.endSection();
 -                return;
 -            }
--        }
--
--        GL11.glColorMask(true, true, true, false);
--        this.mc.mcProfiler.endSection();
--    }
 +                GL11.glMatrixMode(GL11.GL_MODELVIEW);
 +                GL11.glPushMatrix();
 +                GL11.glLoadIdentity();
@@ -1787,13 +1812,13 @@
 +
 +            //OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
 +            this.checkGLError("Here");
-+        }
-+
-+        GL11.glColorMask(true, true, true, false);
+         }
+ 
+         GL11.glColorMask(true, true, true, false);
 +        GL11.glFlush();
-+        this.mc.mcProfiler.endSection();
-+    }
-+
+         this.mc.mcProfiler.endSection();
+     }
+ 
 +    private class TexturedVertex {
 +        // Vertex data
 +        private float[] xyzw = new float[] {0f, 0f, 0f, 1f};
@@ -2475,10 +2500,128 @@
 +    private static String getLogInfo(int obj) {
 +        return ARBShaderObjects.glGetInfoLogARB(obj, ARBShaderObjects.glGetObjectParameteriARB(obj, ARBShaderObjects.GL_OBJECT_INFO_LOG_LENGTH_ARB));
 +    }
- 
++
      /**
       * Render clouds if enabled
-@@ -2000,16 +3650,105 @@
+      */
+@@ -1997,19 +3677,229 @@
+         }
+     }
+ 
++    private float getDistortionFitY()
++    {
++        float fit = 0.0f;
++
++        switch (this.mc.gameSettings.distortionFitPoint)
++        {
++            case 0:
++                fit = 1.0f;
++                break;
++            case 1:
++                fit = 0.8f;
++                break;
++            case 2:
++                fit = 0.6f;
++                break;
++            case 3:
++                fit = 0.4f;
++                break;
++            case 4:
++                fit = 0.2f;
++                break;
++            case 5:
++            default:
++                fit = 0.0f;
++                break;
++            case 6:
++                fit = 0.0f;
++                break;
++            case 7:
++                fit = 0.0f;
++                break;
++            case 8:
++                fit = 0.0f;
++                break;
++            case 9:
++                fit = 0.0f;
++                break;
++            case 10:
++                fit = 0.0f;
++                break;
++            case 11:
++                fit = 0.0f;
++                break;
++            case 12:
++                fit = 0.0f;
++                break;
++            case 13:
++                fit = 0.0f;
++                break;
++            case 14:
++                fit = 0.0f;
++                break;
++        }
++
++        return fit;
++    }
++
++    private float getDistortionFitX()
++    {
++        float fit = -1.0f;
++
++        switch (this.mc.gameSettings.distortionFitPoint)
++        {
++            case 0:
++                fit = -1.0f;
++                break;
++            case 1:
++                fit = -1.0f;
++                break;
++            case 2:
++                fit = -1.0f;
++                break;
++            case 3:
++                fit = -1.0f;
++                break;
++            case 4:
++                fit = -1.0f;
++                break;
++            case 5:
++            default:
++                fit = -1.0f;
++                break;
++            case 6:
++                fit = -0.9f;
++                break;
++            case 7:
++                fit = -0.8f;
++                break;
++            case 8:
++                fit = -0.7f;
++                break;
++            case 9:
++                fit = -0.6f;
++                break;
++            case 10:
++                fit = -0.5f;
++                break;
++            case 11:
++                fit = -0.4f;
++                break;
++            case 12:
++                fit = -0.3f;
++                break;
++            case 13:
++                fit = -0.2f;
++                break;
++            case 14:
++                fit = -0.1f;
++                break;
++        }
++
++        return fit;
++    }
++
      /**
       * Setup orthogonal projection for rendering GUI screen overlays
       */
@@ -2500,7 +2643,14 @@
 +            GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
 +
 +            // Projection
-+            EyeRenderParams eye2 = oculusRift.getEyeRenderParams(0, 0, (int)ceil(this.mc.displayWidth), this.mc.displayHeight, 0.1f, 200.0f);
++            EyeRenderParams eye2 = oculusRift.getEyeRenderParams(0, 0,
++                    (int)ceil(this.mc.displayWidth),
++                    this.mc.displayHeight,
++                    0.1f,
++                    200.0f,
++                    this.mc.gameSettings.fovScaleFactor,
++                    getDistortionFitX(),
++                    getDistortionFitY());
 +
 +            GL11.glMatrixMode(GL11.GL_PROJECTION);
 +            GL11.glLoadIdentity();
@@ -2524,7 +2674,7 @@
 +            GL11.glMatrixMode(GL11.GL_MODELVIEW);
 +            GL11.glLoadIdentity();
 +
-+            this.prevCamRoll = this.camRoll = oculusRift.getRollDegrees_LH();
++            this.prevCamRoll = this.camRoll;// = oculusRift.getRollDegrees_LH();
 +            float roll = this.camRoll;
 +            float pitch = entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks;
 +            float yaw = (entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks) - entity.renderYawOffset;
@@ -2593,7 +2743,7 @@
      }
  
      /**
-@@ -2224,7 +3963,7 @@
+@@ -2224,7 +4114,7 @@
       * Sets up the fog to be rendered. If the arg passed in is -1 the fog starts at 0 and goes to 80% of far plane
       * distance and is used for sky rendering.
       */
@@ -2602,7 +2752,7 @@
      {
          EntityLiving var3 = this.mc.renderViewEntity;
          boolean var4 = false;
-@@ -2253,7 +3992,7 @@
+@@ -2253,7 +4143,7 @@
              GL11.glFog(GL11.GL_FOG_COLOR, this.setFogColorBuffer(this.fogColorRed, this.fogColorGreen, this.fogColorBlue, 1.0F));
              GL11.glNormal3f(0.0F, -1.0F, 0.0F);
              GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
@@ -2611,7 +2761,7 @@
              float var6;
  
              if (var3.isPotionActive(Potion.blindness))
-@@ -2359,7 +4098,7 @@
+@@ -2359,7 +4249,7 @@
  
                          if (Config.isDepthFog() && this.mc.theWorld.provider.getWorldHasVoidParticles() && !var4)
                          {

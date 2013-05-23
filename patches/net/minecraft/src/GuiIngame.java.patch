@@ -340,7 +340,7 @@
                      GL11.glDisable(GL11.GL_BLEND);
                      GL11.glPopMatrix();
                  }
-@@ -432,44 +442,95 @@
+@@ -432,44 +442,98 @@
                  var35 = String.format(StatCollector.translateToLocal("demo.remainingTime"), new Object[] {StringUtils.ticksToElapsedTime((int)(120500L - this.mc.theWorld.getTotalWorldTime()))});
              }
  
@@ -447,6 +447,9 @@
 +                this.drawString(fontRenderer, "Render this player's head wear=" + renderHeadWear + " [Ctrl M]", 2, nBaseHeight + 80, 14737632);
 +                this.drawString(fontRenderer, "Allow mouse pitch input=" + allowMousePitchInput + " [Ctrl N]", 2, nBaseHeight + 90, 14737632);
 +                this.drawString(fontRenderer, "FSAA=" + fsaa + " [Ctrl B], Scale factor=" + fsaaScale + " [Ctrl-Alt B]", 2, nBaseHeight + 100, 14737632);
++                this.drawString(fontRenderer, String.format("FOV scale factor: %.3f [Ctrl , or .], Corrected Eye To Screen Distance: %.2fmm", new Object[] {Float.valueOf(this.mc.gameSettings.fovScaleFactor), Float.valueOf(oculusRift.getHMDInfo().EyeToScreenDistance * this.mc.gameSettings.fovScaleFactor * 1000)}), 2, nBaseHeight + 110, 14737632);
++                this.drawString(fontRenderer, "Distortion fit point: " + this.mc.gameSettings.distortionFitPoint + " [Ctrl-Alt , or .]", 2, nBaseHeight + 120, 14737632);
++                this.drawString(fontRenderer, String.format("Head track sensitivity: %.1f [Ctrl V]", new Object[] {Float.valueOf(this.mc.gameSettings.headTrackSensitivity)}), 2, nBaseHeight + 130, 14737632);
 +
 +                //this.drawString(fontRenderer, String.format("DisplayWidth=%d, DisplayHeight=%d", new Object[] {Integer.valueOf(displayWidth), Integer.valueOf(displayHeight)}), 2, nBaseHeight + 16, 14737632);
 +                //this.drawString(fontRenderer, String.format("RenderScale=%.4f, RenderWidth=%d, RenderHeight=%d", new Object[] {Float.valueOf(renderScale), Integer.valueOf(renderWidth), Integer.valueOf(renderHeight)}), 2, nBaseHeight + 24, 14737632);
@@ -464,7 +467,7 @@
              GL11.glPopMatrix();
              this.mc.mcProfiler.endSection();
          }
-@@ -477,32 +538,33 @@
+@@ -477,32 +541,33 @@
          if (this.recordPlayingUpFor > 0)
          {
              this.mc.mcProfiler.startSection("overlayMessage");
@@ -507,7 +510,7 @@
              this.mc.mcProfiler.endSection();
          }
  
-@@ -510,14 +572,14 @@
+@@ -510,14 +575,14 @@
  
          if (var42 != null)
          {
@@ -524,7 +527,7 @@
          this.mc.mcProfiler.startSection("chat");
          this.persistantChatGUI.drawChat(this.updateCounter);
          this.mc.mcProfiler.endSection();
-@@ -532,27 +594,27 @@
+@@ -532,27 +597,27 @@
              var38 = var39.currentServerMaxPlayers;
              var37 = var38;
  
@@ -562,7 +565,7 @@
                  GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                  GL11.glEnable(GL11.GL_ALPHA_TEST);
  
-@@ -561,18 +623,18 @@
+@@ -561,18 +626,18 @@
                      GuiPlayerInfo var49 = (GuiPlayerInfo)var41.get(var20);
                      ScorePlayerTeam var48 = this.mc.theWorld.getScoreboard().getPlayersTeam(var49.name);
                      String var53 = ScorePlayerTeam.func_96667_a(var48, var49.name);
@@ -585,7 +588,7 @@
                          }
                      }
  
-@@ -607,7 +669,7 @@
+@@ -607,7 +672,7 @@
                      }
  
                      this.zLevel += 100.0F;
@@ -594,7 +597,7 @@
                      this.zLevel -= 100.0F;
                  }
              }
-@@ -669,13 +731,13 @@
+@@ -669,13 +734,13 @@
      /**
       * Renders dragon's (boss) health on the HUD
       */
