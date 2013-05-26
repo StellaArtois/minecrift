@@ -39,40 +39,41 @@
      /**
       * Whether to show advanced information on item tooltips, toggled by F3+H
       */
-@@ -173,7 +198,7 @@
-     public int thirdPersonView;
- 
+@@ -175,6 +200,7 @@
      /** true if debug info should be displayed instead of version */
--    public boolean showDebugInfo;
-+    public int showDebugInfo;
+     public boolean showDebugInfo;
      public boolean showDebugProfilerChart;
++	public boolean showOculusDebugInfo;
  
      /** The lastServer string. */
-@@ -211,9 +236,9 @@
+     public String lastServer;
+@@ -204,6 +230,7 @@
+     public String language;
+     private File optionsFileOF;
+ 
++
+     public GameSettings(Minecraft par1Minecraft, File par2File)
+     {
+         this.renderDistance = 1;
+@@ -211,7 +238,7 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
 -        this.hideGUI = false;
 +        this.hideGUI = true;       // TODO: Default
          this.thirdPersonView = 0;
--        this.showDebugInfo = false;
-+        this.showDebugInfo = 0;
+         this.showDebugInfo = false;
          this.showDebugProfilerChart = false;
-         this.lastServer = "";
-         this.noclip = false;
-@@ -240,9 +265,9 @@
+@@ -240,7 +267,7 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
 -        this.hideGUI = false;
 +        this.hideGUI = true;     // TODO: Default
          this.thirdPersonView = 0;
--        this.showDebugInfo = false;
-+        this.showDebugInfo = 0;
+         this.showDebugInfo = false;
          this.showDebugProfilerChart = false;
-         this.lastServer = "";
-         this.noclip = false;
-@@ -1677,6 +1702,73 @@
+@@ -1677,6 +1704,73 @@
                          this.mouseSensitivity = this.parseFloat(var3[1]);
                      }
  
@@ -146,7 +147,7 @@
                      if (var3[0].equals("fov"))
                      {
                          this.fovSetting = this.parseFloat(var3[1]);
-@@ -2365,6 +2457,21 @@
+@@ -2365,6 +2459,21 @@
              var5.println("difficulty:" + this.difficulty);
              var5.println("fancyGraphics:" + this.fancyGraphics);
              var5.println("ao:" + this.ambientOcclusion);

@@ -110,16 +110,25 @@
  import org.lwjgl.LWJGLException;
  import org.lwjgl.Sys;
  import org.lwjgl.input.Keyboard;
-@@ -128,6 +33,8 @@
+@@ -127,6 +32,9 @@
+ import org.lwjgl.opengl.GLContext;
  import org.lwjgl.opengl.PixelFormat;
  import org.lwjgl.util.glu.GLU;
- 
-+import static java.lang.Math.ceil;
++import com.mtbs3d.minecrift.Renderer;
 +
++import static java.lang.Math.ceil;
+ 
  public abstract class Minecraft implements Runnable, IPlayerUsage
  {
-     /** A 10MiB preallocation to ensure the heap is reasonably sized. */
-@@ -226,7 +133,7 @@
+@@ -183,6 +91,7 @@
+     public GuiScreen currentScreen = null;
+     public LoadingScreenRenderer loadingScreen;
+     public EntityRenderer entityRenderer;
++    public Renderer oculusRenderer;
+ 
+     /** Reference to the download resources thread. */
+     private ThreadDownloadResources downloadResourcesThread;
+@@ -226,7 +135,7 @@
       * This is set to fpsCounter every debug screen update, and is shown on the debug screen. It's also sent as part of
       * the usage snooping.
       */
@@ -128,27 +137,45 @@
  
      /**
       * When you place a block, it's set to 6, decremented once per tick, when it's 0, you can place another block.
-@@ -285,6 +192,10 @@
+@@ -285,6 +194,9 @@
      /** Profiler currently displayed in the debug screen pie chart */
      private String debugProfilerName = "root";
  
 +    /** Oculus Rift */
-+    private OculusRift oculusRift;
-+    public boolean _displayedInRender = false;
++    public OculusRift oculusRift;
 +
      public Minecraft(Canvas par1Canvas, MinecraftApplet par2MinecraftApplet, int par3, int par4, boolean par5)
      {
          StatList.nopInit();
-@@ -300,6 +211,8 @@
+@@ -300,6 +212,10 @@
          theMinecraft = this;
          TextureManager.init();
          this.guiAchievement = new GuiAchievement(this);
 +
++        OculusRift.LoadLibrary(new File(new File(getMinecraftDir(),"bin"),"natives"));
 +        this.oculusRift = new OculusRift();
++        this.oculusRift.use = true;
      }
  
      private void startTimerHackThread()
-@@ -439,6 +352,10 @@
+@@ -413,7 +329,15 @@
+ 
+         ColorizerGrass.setGrassBiomeColorizer(this.renderEngine.getTextureContents("/misc/grasscolor.png"));
+         ColorizerFoliage.setFoliageBiomeColorizer(this.renderEngine.getTextureContents("/misc/foliagecolor.png"));
+-        this.entityRenderer = new EntityRenderer(this);
++        if( oculusRift.use )
++        {
++        	this.oculusRenderer = new Renderer(this,oculusRift,guiAchievement);
++        	this.entityRenderer = this.oculusRenderer;
++        }
++        else
++        {
++        	this.entityRenderer = new EntityRenderer(this);
++        }
+         RenderManager.instance.itemRenderer = new ItemRenderer(this);
+         this.statFileWriter = new StatFileWriter(this.session, this.mcDataDir);
+         AchievementList.openInventory.setStatStringFormatter(new StatStringFormatKeyInv(this));
+@@ -439,6 +363,10 @@
          GL11.glViewport(0, 0, this.displayWidth, this.displayHeight);
          this.effectRenderer = new EffectRenderer(this.theWorld, this.renderEngine);
  
@@ -159,43 +186,18 @@
          try
          {
              this.downloadResourcesThread = new ThreadDownloadResources(this.mcDataDir, this);
-@@ -618,7 +535,7 @@
- 
-         if (par1GuiScreen instanceof GuiMainMenu)
+@@ -628,21 +556,28 @@
          {
--            this.gameSettings.showDebugInfo = false;
-+            this.gameSettings.showDebugInfo = 0;
-             this.ingameGUI.getChatGUI().clearChatMessages();
-         }
- 
-@@ -626,17 +543,35 @@
- 
-         if (par1GuiScreen != null)
-         {
--            this.setIngameNotInFocus();
--            ScaledResolution var2 = new ScaledResolution(this.gameSettings, this.displayWidth, this.displayHeight);
+             this.setIngameNotInFocus();
+             ScaledResolution var2 = new ScaledResolution(this.gameSettings, this.displayWidth, this.displayHeight);
 -            int var3 = var2.getScaledWidth();
 -            int var4 = var2.getScaledHeight();
 -            ((GuiScreen)par1GuiScreen).setWorldAndResolution(this, var3, var4);
--            this.skipRenderWorld = false;
-+            if (oculusRift.use && _displayedInRender)
-+            {
-+                this.setIngameNotInFocus(false); // TODO: Don't ungrab the mouse pointer
-+                ScaledResolution var2 = new ScaledResolution(this.gameSettings, this.displayWidth, this.displayHeight);
-+                int width = var2.getScaledWidth();
-+                int height = var2.getScaledHeight();
-+                ((GuiScreen)par1GuiScreen).setWorldAndResolution(this, width, height);
-+                this.skipRenderWorld = false;
-+            }
-+            else
-+            {
-+                this.setIngameNotInFocus(true);
-+                ScaledResolution var2 = new ScaledResolution(this.gameSettings, this.displayWidth, this.displayHeight);
-+                int width = var2.getScaledWidth();
-+                int height = var2.getScaledHeight();
-+                ((GuiScreen)par1GuiScreen).setWorldAndResolution(this, width, height);
-+                this.skipRenderWorld = false;
-+            }
++            int width = var2.getScaledWidth();
++            int height = var2.getScaledHeight();
++            ((GuiScreen)par1GuiScreen).setWorldAndResolution(this, width, height);
+             this.skipRenderWorld = false;
++
          }
          else
          {
@@ -205,11 +207,18 @@
 +        if ((par1GuiScreen instanceof GuiMainMenu && this.theWorld == null)      ||
 +            (par1GuiScreen instanceof GuiDisconnected && this.theWorld == null))
 +        {
-+            this.setIngameNotInFocus(true);        // TODO: Ensure disconnected menu has mouse pointer!
++            this.setIngameNotInFocus();        // TODO: Ensure disconnected menu has mouse pointer!
 +        }
      }
  
      /**
+      * Checks for an OpenGL error. If there is one, prints the error ID and error string.
+      */
+-    private void checkGLError(String par1Str)
++    public void checkGLError(String par1Str)
+     {
+         int var2 = GL11.glGetError();
+ 
 @@ -700,6 +635,9 @@
              this.sndManager.closeMinecraft();
              Mouse.destroy();
@@ -233,21 +242,12 @@
              }
  
              this.mcProfiler.endStartSection("preRenderErrors");
-@@ -857,7 +796,7 @@
-             if (!this.skipRenderWorld)
-             {
-                 this.mcProfiler.endStartSection("gameRenderer");
--                this.entityRenderer.updateCameraAndRender(this.timer.renderPartialTicks);
-+                this.entityRenderer.updateCameraAndRender(this.timer.renderPartialTicks, this.oculusRift, this.guiAchievement, renderGUI);
-                 this.mcProfiler.endSection();
-             }
- 
 @@ -869,7 +808,7 @@
                  this.toggleFullscreen();
              }
  
 -            if (this.gameSettings.showDebugInfo && this.gameSettings.showDebugProfilerChart)
-+            if (this.gameSettings.showDebugInfo > 0 && this.gameSettings.showDebugProfilerChart)
++            if (this.gameSettings.showDebugInfo  && this.gameSettings.showDebugProfilerChart)
              {
                  if (!this.mcProfiler.profilingEnabled)
                  {
@@ -263,49 +263,23 @@
              this.mcProfiler.startSection("root");
              Thread.yield();
  
-@@ -1192,21 +1134,28 @@
+@@ -1192,12 +1134,10 @@
       */
      public void setIngameNotInFocus()
      {
 -        if (this.inGameHasFocus)
 -        {
-+        setIngameNotInFocus(true);
-+    }
-+
-+    public void setIngameNotInFocus(boolean ungrabMouse)
-+    {
-+       // if (this.inGameHasFocus)
-+       // {
-             KeyBinding.unPressAllKeys();
-             this.inGameHasFocus = false;
--            this.mouseHelper.ungrabMouseCursor();
+-            KeyBinding.unPressAllKeys();
+-            this.inGameHasFocus = false;
++        KeyBinding.unPressAllKeys();
++        this.inGameHasFocus = false;
++        if( !oculusRift.use || this.theWorld == null ) //If we're in a world with the oculus, we're rendering in stereo, so keep mouse grabbed
+             this.mouseHelper.ungrabMouseCursor();
 -        }
-+            if (ungrabMouse) // TODO: Un grab mouse!
-+                this.mouseHelper.ungrabMouseCursor();
-+        //}
      }
  
      /**
-      * Displays the ingame menu
-      */
--    public void displayInGameMenu()
-+    public void displayInGameMenu(boolean displayedInRender)
-     {
-         if (this.currentScreen == null)
-         {
-+            this._displayedInRender = displayedInRender;
-             this.displayGuiScreen(new GuiIngameMenu());
- 
-             if (this.isSingleplayer() && !this.theIntegratedServer.getPublic())
-@@ -1214,6 +1163,7 @@
-                 this.sndManager.pauseAllSounds();
-             }
-         }
-+        this._displayedInRender = false;
-     }
- 
-     private void sendClickBlockToController(int par1, boolean par2)
-@@ -1418,8 +1368,9 @@
+@@ -1418,8 +1358,9 @@
      /**
       * Runs the current tick.
       */
@@ -316,7 +290,7 @@
          if (this.rightClickDelayTimer > 0)
          {
              --this.rightClickDelayTimer;
-@@ -1451,21 +1402,24 @@
+@@ -1451,21 +1392,24 @@
              this.renderEngine.updateDynamicTextures();
          }
  
@@ -350,16 +324,16 @@
  
          if (this.currentScreen != null)
          {
-@@ -1479,7 +1433,17 @@
+@@ -1479,7 +1423,17 @@
          {
              try
              {
 -                this.currentScreen.handleInput();
 +                if (oculusRift.use && this.theWorld != null)
 +                {
-+                    this.entityRenderer.setCorrectedMouse(Mouse.getEventX(), Mouse.getEventY(), this.displayWidth, this.displayHeight);
-+                    this.currentScreen._mouseX = this.entityRenderer.mouseX;
-+                    this.currentScreen._mouseY = this.entityRenderer.mouseY;
++                    this.oculusRenderer.setCorrectedMouse(Mouse.getEventX(), Mouse.getEventY(), this.displayWidth, this.displayHeight);
++                    this.currentScreen._mouseX = this.oculusRenderer.mouseX;
++                    this.currentScreen._mouseY = this.oculusRenderer.mouseY;
 +                    this.currentScreen.handleInput(this.displayWidth, this.displayHeight, true);        // TODO: Scale mouse input for stereo viewport
 +                }
 +                else
@@ -369,7 +343,7 @@
              }
              catch (Throwable var6)
              {
-@@ -1565,7 +1529,14 @@
+@@ -1565,7 +1519,14 @@
                      }
                      else if (this.currentScreen != null)
                      {
@@ -385,21 +359,10 @@
                      }
                  }
              }
-@@ -1620,9 +1591,313 @@
-                         {
-                             if (Keyboard.getEventKey() == 1)
-                             {
--                                this.displayInGameMenu();
-+                                if (this.oculusRift.use)
-+                                {
-+                                    renderGUI = true;
-+                                }
-+                                else
-+                                {
-+                                    this.displayInGameMenu(false);
-+                                }
-+                            }
-+
+@@ -1623,6 +1584,209 @@
+                                 this.displayInGameMenu();
+                             }
+ 
 +                            if (oculusRift.use)
 +                            {
 +                                // TODO: Capture oculus key events
@@ -420,7 +383,7 @@
 +                                    {
 +                                        this.gameSettings.useChromaticAbCorrection = !this.gameSettings.useChromaticAbCorrection;
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                        this.oculusRenderer._FBOInitialised = false; // Reinit FBO and shaders
 +                                    }
 +                                    else
 +                                    {
@@ -440,13 +403,13 @@
 +                                            this.gameSettings.superSampleScaleFactor = 1.5f;
 +                                        }
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false;
++                                        this.oculusRenderer._FBOInitialised = false;
 +                                    }
 +                                    else
 +                                    {
 +                                        this.gameSettings.useSupersample = !this.gameSettings.useSupersample;
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                        this.oculusRenderer._FBOInitialised = false; // Reinit FBO and shaders
 +                                    }
 +                                }
 +
@@ -526,7 +489,7 @@
 +                                        if (gameSettings.distortionFitPoint > 14)
 +                                            gameSettings.distortionFitPoint = 14;
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                        this.oculusRenderer._FBOInitialised = false; // Reinit FBO and shaders
 +                                    }
 +                                    else
 +                                    {
@@ -546,7 +509,7 @@
 +                                        if (gameSettings.distortionFitPoint < 0)
 +                                            gameSettings.distortionFitPoint = 0;
 +                                        this.gameSettings.saveOptions();
-+                                        this.entityRenderer._FBOInitialised = false; // Reinit FBO and shaders
++                                        this.oculusRenderer._FBOInitialised = false; // Reinit FBO and shaders
 +                                    }
 +                                    else
 +                                    {
@@ -566,72 +529,6 @@
 +                                    }
 +                                    this.gameSettings.saveOptions();
 +                                }
-+//                                float change = 0.2f;
-+//
-+//                                // Yaw change
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_H && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-+//                                {
-+//                                    System.out.println("Yaw change");
-+//                                    if (oculusRift.testYawAngleDelta == 0.0f)
-+//                                    {
-+//                                        oculusRift.testYawAngleDelta = change;
-+//                                    }
-+//                                    else if (oculusRift.testYawAngleDelta > 0.0f)
-+//                                    {
-+//                                        oculusRift.testYawAngleDelta = -change;
-+//                                    }
-+//                                    else
-+//                                    {
-+//                                        oculusRift.testYawAngleDelta = 0.0f;
-+//                                    }
-+//                                }
-+//
-+//                                // Pitch change
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_J && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-+//                                {
-+//                                    System.out.println("Pitch change");
-+//                                    if (oculusRift.testPitchAngleDelta == 0.0f)
-+//                                    {
-+//                                        oculusRift.testPitchAngleDelta = change;
-+//                                    }
-+//                                    else if (oculusRift.testPitchAngleDelta > 0.0f)
-+//                                    {
-+//                                        oculusRift.testPitchAngleDelta = -change;
-+//                                    }
-+//                                    else
-+//                                    {
-+//                                        oculusRift.testPitchAngleDelta = 0.0f;
-+//                                    }
-+//                                }
-+//
-+//                                // Roll change
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_K && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-+//                                {
-+//                                    System.out.println("Roll change");
-+//                                    if (oculusRift.testRollAngleDelta == 0.0f)
-+//                                    {
-+//                                        oculusRift.testRollAngleDelta = change;
-+//                                    }
-+//                                    else if (oculusRift.testRollAngleDelta > 0.0f)
-+//                                    {
-+//                                        oculusRift.testRollAngleDelta = -change;
-+//                                    }
-+//                                    else
-+//                                    {
-+//                                        oculusRift.testRollAngleDelta = 0.0f;
-+//                                    }
-+//                                }
-+////
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_NUMPAD0 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-+//                                {
-+//                                    this.gameSettings.useSupersample = !this.gameSettings.useSupersample;
-+//                                    this.entityRenderer._FBOInitialised = false;
-+//                                }
-+//
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_NUMPAD2 && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
-+//                                {
-+//                                    oculusRift.useMipMaps = !oculusRift.useMipMaps;
-+//                                }
 +
 +                                // Increase IPD
 +                                if (Keyboard.getEventKey() == Keyboard.KEY_EQUALS && Keyboard.isKeyDown(Keyboard.KEY_LCONTROL))
@@ -666,67 +563,26 @@
 +                                    this.gameSettings.ipd = newIpd;
 +                                    this.gameSettings.saveOptions();
 +                                }
++                            }
 +
-+//                                // Increase player height
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_ADD && Keyboard.isKeyDown(Keyboard.KEY_LMENU))    // LALT
-+//                                {
-+//                                    float currentEyeHeight = oculusRift.getEyeHeight();
-+//                                    if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
-+//                                    {
-+//                                        oculusRift.setEyeHeight(currentEyeHeight + 0.01f);
-+//                                    }
-+//                                    else
-+//                                    {
-+//                                        oculusRift.setEyeHeight(currentEyeHeight + 0.001f);
-+//                                    }
-+//                                }
-+//
-+//                                // Decrease player height
-+//                                if (Keyboard.getEventKey() == Keyboard.KEY_SUBTRACT && Keyboard.isKeyDown(Keyboard.KEY_LMENU))
-+//                                {
-+//                                    float currentEyeHeight = oculusRift.getEyeHeight();
-+//                                    if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
-+//                                    {
-+//                                        oculusRift.setEyeHeight(currentEyeHeight - 0.01f);
-+//                                    }
-+//                                    else
-+//                                    {
-+//                                        oculusRift.setEyeHeight(currentEyeHeight - 0.001f);
-+//                                    }
-+//                                }
-                             }
- 
 +
                              if (Keyboard.getEventKey() == 31 && Keyboard.isKeyDown(61))
                              {
                                  this.forceReload();
-@@ -1667,10 +1942,14 @@
+@@ -1667,10 +1831,11 @@
                                  this.gameSettings.hideGUI = !this.gameSettings.hideGUI;
                              }
  
 -                            if (Keyboard.getEventKey() == 61)
 +                            if (Keyboard.getEventKey() == Keyboard.KEY_F3)
                              {
--                                this.gameSettings.showDebugInfo = !this.gameSettings.showDebugInfo;
-+                                this.gameSettings.showDebugInfo++;
+                                 this.gameSettings.showDebugInfo = !this.gameSettings.showDebugInfo;
                                  this.gameSettings.showDebugProfilerChart = GuiScreen.isShiftKeyDown();
-+                                if (this.gameSettings.showDebugInfo > 2)
-+                                {
-+                                    this.gameSettings.showDebugInfo = 0;
-+                                }
++                                this.gameSettings.showOculusDebugInfo = GuiScreen.isCtrlKeyDown();
                              }
  
                              if (Keyboard.getEventKey() == 63)
-@@ -1699,7 +1978,7 @@
-                             }
-                         }
- 
--                        if (this.gameSettings.showDebugInfo && this.gameSettings.showDebugProfilerChart)
-+                        if (this.gameSettings.showDebugInfo > 0 && this.gameSettings.showDebugProfilerChart)
-                         {
-                             if (Keyboard.getEventKey() == 11)
-                             {
-@@ -1883,6 +2162,8 @@
+@@ -1883,6 +2048,8 @@
  
          this.mcProfiler.endSection();
          this.systemTime = getSystemTime();
@@ -735,3 +591,11 @@
      }
  
      /**
+@@ -2021,6 +2188,7 @@
+ 
+             this.setServerData((ServerData)null);
+             this.integratedServerIsRunning = false;
++            this.setIngameNotInFocus();
+         }
+ 
+         this.sndManager.playStreaming((String)null, 0.0F, 0.0F, 0.0F);

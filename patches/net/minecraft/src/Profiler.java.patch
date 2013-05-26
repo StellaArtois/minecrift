@@ -5,7 +5,7 @@
      public void startSection(String par1Str)
      {
 -        if (Config.getGameSettings().showDebugInfo)
-+        if (Config.getGameSettings().showDebugInfo > 0)
++        if (Config.getGameSettings().showDebugInfo )
          {
              if (this.startTickNano == 0L && par1Str.equals("tick"))
              {

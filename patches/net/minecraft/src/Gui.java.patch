@@ -1,9 +1,11 @@
 --- a/net/minecraft/src/Gui.java
 +++ b/net/minecraft/src/Gui.java
-@@ -5,6 +5,7 @@
+@@ -4,7 +4,8 @@
+ 
  public class Gui
  {
-     protected float zLevel = 0.0F;
+-    protected float zLevel = 0.0F;
++    public float zLevel = 0.0F;
 +    public boolean _isForOculus = false;
  
      protected void drawHorizontalLine(int par1, int par2, int par3, int par4)

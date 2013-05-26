@@ -16,11 +16,17 @@
  
  public class GuiIngame extends Gui
  {
-@@ -44,47 +48,44 @@
+@@ -44,47 +48,50 @@
      /**
       * Render the ingame overlay with quick icon bar, ...
       */
 -    public void renderGameOverlay(float par1, boolean par2, int par3, int par4)
++    public void renderGameOverlay(float renderPartialTicks, boolean par1 , int par2, int par3)
++	{
++    	ScaledResolution scaledResolution = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight, true);    // works
++    	//TODO: actually call it.
++   
++    }
 +    public void renderGameOverlay(float renderPartialTicks, OculusRift oculusRift,
 +                                  int displayWidth, int displayHeight, float renderScale, int renderWidth, int renderHeight, float scaleFactor, int scaledWidth, int scaledHeight, int mouseX, int mouseY, int scaledMouseX, int scaledMouseY)
      {
@@ -80,7 +86,7 @@
          int var20;
          int var23;
          int var22;
-@@ -96,40 +97,49 @@
+@@ -96,40 +103,49 @@
  
          if (!this.mc.playerController.enableEverythingIsScrewedUpMode())
          {
@@ -145,7 +151,7 @@
                  this.mc.mcProfiler.startSection("expBar");
                  var20 = this.mc.thePlayer.xpBarCap();
  
-@@ -137,16 +147,16 @@
+@@ -137,16 +153,16 @@
                  {
                      short var21 = 182;
                      var22 = (int)(this.mc.thePlayer.experience * (float)(var21 + 1));
@@ -166,7 +172,7 @@
                  var22 = var47 - 10;
                  var23 = this.mc.thePlayer.getTotalArmorValue();
                  var24 = -1;
-@@ -165,7 +175,7 @@
+@@ -165,7 +181,7 @@
                  {
                      if (var23 > 0)
                      {
@@ -175,7 +181,7 @@
  
                          if (var25 * 2 + 1 < var23)
                          {
-@@ -196,15 +206,15 @@
+@@ -196,15 +212,15 @@
  
                      var27 = 0;
  
@@ -194,7 +200,7 @@
                      {
                          var29 = var47 + this.rand.nextInt(2);
                      }
-@@ -223,25 +233,25 @@
+@@ -223,25 +239,25 @@
  
                      this.drawTexturedModalRect(var28, var29, 16 + var27 * 9, 9 * var30, 9, 9);
  
@@ -225,7 +231,7 @@
                      {
                          this.drawTexturedModalRect(var28, var29, var26 + 45, 9 * var30, 9, 9);
                      }
-@@ -261,7 +271,7 @@
+@@ -261,7 +277,7 @@
                          var51 = 13;
                      }
  
@@ -234,7 +240,7 @@
                      {
                          var26 = var47 + (this.rand.nextInt(3) - 1);
                      }
-@@ -276,23 +286,23 @@
+@@ -276,23 +292,23 @@
  
                      if (var14)
                      {
@@ -262,7 +268,7 @@
                      {
                          this.drawTexturedModalRect(var29, var26, var50 + 45, 27, 9, 9);
                      }
-@@ -327,11 +337,11 @@
+@@ -327,11 +343,11 @@
              GL11.glEnable(GL12.GL_RESCALE_NORMAL);
              RenderHelper.enableGUIStandardItemLighting();
  
@@ -278,7 +284,7 @@
              }
  
              RenderHelper.disableStandardItemLighting();
-@@ -354,8 +364,8 @@
+@@ -354,8 +370,8 @@
                  var33 = 1.0F - (float)(var32 - 100) / 10.0F;
              }
  
@@ -289,7 +295,7 @@
              GL11.glEnable(GL11.GL_ALPHA_TEST);
              GL11.glEnable(GL11.GL_DEPTH_TEST);
              this.mc.mcProfiler.endSection();
-@@ -367,16 +377,16 @@
+@@ -367,16 +383,16 @@
          if (this.mc.playerController.func_78763_f() && this.mc.thePlayer.experienceLevel > 0)
          {
              this.mc.mcProfiler.startSection("expLevel");
@@ -315,7 +321,7 @@
              this.mc.mcProfiler.endSection();
          }
  
-@@ -389,12 +399,12 @@
+@@ -389,12 +405,12 @@
              if (this.remainingHighlightTicks > 0 && this.highlightingItemStack != null)
              {
                  var35 = this.highlightingItemStack.getDisplayName();
@@ -331,7 +337,7 @@
                  }
  
                  var38 = (int)((float)this.remainingHighlightTicks * 256.0F / 10.0F);
-@@ -409,7 +419,7 @@
+@@ -409,7 +425,7 @@
                      GL11.glPushMatrix();
                      GL11.glEnable(GL11.GL_BLEND);
                      GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -340,7 +346,7 @@
                      GL11.glDisable(GL11.GL_BLEND);
                      GL11.glPopMatrix();
                  }
-@@ -432,44 +442,98 @@
+@@ -432,44 +448,98 @@
                  var35 = String.format(StatCollector.translateToLocal("demo.remainingTime"), new Object[] {StringUtils.ticksToElapsedTime((int)(120500L - this.mc.theWorld.getTotalWorldTime()))});
              }
  
@@ -352,7 +358,7 @@
          }
  
 -        if (this.mc.gameSettings.showDebugInfo)
-+        if (this.mc.gameSettings.showDebugInfo > 0)
++        if (this.mc.gameSettings.showDebugInfo )
          {
              this.mc.mcProfiler.startSection("debug");
 +//            fontRenderer._offsetX = scaledWidth / 4;
@@ -381,7 +387,7 @@
 -            this.drawString(var8, "f: " + var24 + " (" + Direction.directions[var24] + ") / " + MathHelper.wrapAngleTo180_float(this.mc.thePlayer.rotationYaw), 2, 88, 14737632);
  
 -            if (this.mc.theWorld != null && this.mc.theWorld.blockExists(var47, var22, var23))
-+            if (this.mc.gameSettings.showDebugInfo == 1)
++            if ( !this.mc.gameSettings.showOculusDebugInfo )
              {
 -                Chunk var52 = this.mc.theWorld.getChunkFromBlockCoords(var47, var23);
 -                this.drawString(var8, "lc: " + (var52.getTopFilledSegment() + 15) + " b: " + var52.getBiomeGenForWorldCoords(var47 & 15, var23 & 15, this.mc.theWorld.getWorldChunkManager()).biomeName + " bl: " + var52.getSavedLightValue(EnumSkyBlock.Block, var47 & 15, var22, var23 & 15) + " sl: " + var52.getSavedLightValue(EnumSkyBlock.Sky, var47 & 15, var22, var23 & 15) + " rl: " + var52.getBlockLightValue(var47 & 15, var22, var23 & 15, 0), 2, 96, 14737632);
@@ -415,7 +421,7 @@
 +
 +                this.drawString(fontRenderer, String.format("ws: %.3f, fs: %.3f, g: %b, fl: %d", new Object[] {Float.valueOf(this.mc.thePlayer.capabilities.getWalkSpeed()), Float.valueOf(this.mc.thePlayer.capabilities.getFlySpeed()), Boolean.valueOf(this.mc.thePlayer.onGround), Integer.valueOf(this.mc.theWorld.getHeightValue(var47, var23))}), 2, 104, 14737632);
 +            }
-+            else if (this.mc.gameSettings.showDebugInfo == 2)
++            else 
 +            {
 +                // TODO: Add oculus debug info here?
 +
@@ -467,7 +473,7 @@
              GL11.glPopMatrix();
              this.mc.mcProfiler.endSection();
          }
-@@ -477,32 +541,33 @@
+@@ -477,32 +547,33 @@
          if (this.recordPlayingUpFor > 0)
          {
              this.mc.mcProfiler.startSection("overlayMessage");
@@ -510,7 +516,7 @@
              this.mc.mcProfiler.endSection();
          }
  
-@@ -510,14 +575,14 @@
+@@ -510,14 +581,14 @@
  
          if (var42 != null)
          {
@@ -527,7 +533,7 @@
          this.mc.mcProfiler.startSection("chat");
          this.persistantChatGUI.drawChat(this.updateCounter);
          this.mc.mcProfiler.endSection();
-@@ -532,27 +597,27 @@
+@@ -532,27 +603,27 @@
              var38 = var39.currentServerMaxPlayers;
              var37 = var38;
  
@@ -565,7 +571,7 @@
                  GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                  GL11.glEnable(GL11.GL_ALPHA_TEST);
  
-@@ -561,18 +626,18 @@
+@@ -561,18 +632,18 @@
                      GuiPlayerInfo var49 = (GuiPlayerInfo)var41.get(var20);
                      ScorePlayerTeam var48 = this.mc.theWorld.getScoreboard().getPlayersTeam(var49.name);
                      String var53 = ScorePlayerTeam.func_96667_a(var48, var49.name);
@@ -588,7 +594,7 @@
                          }
                      }
  
-@@ -607,7 +672,7 @@
+@@ -607,7 +678,7 @@
                      }
  
                      this.zLevel += 100.0F;
@@ -597,7 +603,7 @@
                      this.zLevel -= 100.0F;
                  }
              }
-@@ -669,13 +734,13 @@
+@@ -669,13 +740,13 @@
      /**
       * Renders dragon's (boss) health on the HUD
       */

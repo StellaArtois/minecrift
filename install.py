@@ -4,7 +4,7 @@ import shutil, tempfile
 from hashlib import md5  # pylint: disable-msg=E0611
 from optparse import OptionParser
 
-from applychanges import apply_patches, merge_tree
+from applychanges import applychanges
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -114,21 +114,13 @@ def main(mcp_dir):
     os.chdir( base_dir )
 
     src_dir = os.path.join(mcp_dir, "src","minecraft")
-    bak_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
-    try:
-        os.remove( bak_dir )
-    except OSError as e:
-        pass
-    #create "clean" backup for doing diffs later
-    try:
-        shutil.copytree( src_dir, bak_dir )
-    except OSError as e:
-        pass
+    org_src_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
+    if os.path.exists( org_src_dir ):
+        shutil.rmtree( org_src_dir, True )
+    shutil.copytree( src_dir, org_src_dir )
 
-    #apply patches
-    apply_patches( mcp_dir, os.path.join( base_dir, "patches"), src_dir )
-    #merge in the new classes
-    merge_tree( os.path.join( base_dir, "src" ), src_dir )
+    applychanges( mcp_dir )
+
     
 if __name__ == '__main__':
     parser = OptionParser()

@@ -40,22 +40,24 @@ def merge_tree(root_src_dir, root_dst_dir):
                 os.remove(dst_file)
             shutil.copy(src_file, dst_dir)
 
-def main(mcp_dir):
+
+def applychanges(mcp_dir):
     print("Applying Changes...")
 
-    src_dir = os.path.join(mcp_dir, "src","minecraft")
+    mod_src_dir = os.path.join(mcp_dir, "src","minecraft")
     mod_bak_dir = os.path.join(mcp_dir, "src","minecraft-bak")
-    bak_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
+    org_src_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
     
-    print("Backing up src/minecraft to src/minecraft-bak")
-    shutil.rmtree( mod_bak_dir, True )
-    shutil.move( src_dir, mod_bak_dir )
-    shutil.copytree( bak_dir, src_dir )
+    if os.path.exists(mod_src_dir):
+        print("Backing up src/minecraft to src/minecraft-bak")
+        shutil.rmtree( mod_bak_dir, True )
+        shutil.move( mod_src_dir, mod_bak_dir )
+    shutil.copytree( org_src_dir, mod_src_dir )
 
     #apply patches
-    apply_patches( mcp_dir, os.path.join( base_dir, "patches"), src_dir )
+    apply_patches( mcp_dir, os.path.join( base_dir, "patches"), mod_src_dir )
     #merge in the new classes
-    merge_tree( os.path.join( base_dir, "src" ), src_dir )
+    merge_tree( os.path.join( base_dir, "src" ), mod_src_dir )
     
 if __name__ == '__main__':
     parser = OptionParser()
@@ -63,8 +65,8 @@ if __name__ == '__main__':
     options, _ = parser.parse_args()
 
     if not options.mcp_dir is None:
-        main(os.path.abspath(options.mcp_dir))
+        applychanges(os.path.abspath(options.mcp_dir))
     elif os.path.isfile(os.path.join('..', 'runtime', 'commands.py')):
-        main(os.path.abspath('..'))
+        applychanges(os.path.abspath('..'))
     else:
-        main(os.path.abspath('mcp'))
+        applychanges(os.path.abspath('mcp'))
