@@ -5,7 +5,7 @@ import java.nio.FloatBuffer;
 
 import de.fruitfly.ovr.EyeRenderParams;
 import de.fruitfly.ovr.HMDInfo;
-import de.fruitfly.ovr.OculusRift;
+import de.fruitfly.ovr.IOculusRift;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.input.Mouse;
@@ -14,10 +14,8 @@ import net.minecraft.src.*;
 
 import static java.lang.Math.ceil;
 
-public class Renderer extends EntityRenderer
+public class VRRenderer extends EntityRenderer
 {
-    public float oculusYaw = 0.0f;
-    public float oculusPitch = 0.0f;
     public float totalMouseYawDelta = 0.0f;
     public float totalMousePitchDelta = 0.0f;
 
@@ -60,164 +58,35 @@ public class Renderer extends EntityRenderer
     int lastMouseMaxOffsetY = 0;
     public int mouseX = 0;
     public int mouseY = 0;
-    OculusRift oculusRift;
+    IOculusRift oculusRift;
     GuiAchievement guiAchievement;
     EyeRenderParams eyeRenderParams;
-    float eyeHeightOffset;
-    float neckBaseToEyeHeight;
-    float eyeProtrusion;
+	private double renderViewEntityX;
+	private double renderViewEntityY;
+	private double renderViewEntityZ;
+    
+    boolean superSampleSupported;
+	private float pointX;
+	private float pointZ;
+	private float pointY;
 
-    public Renderer(Minecraft par1Minecraft, OculusRift rift, GuiAchievement guiAchiv )
+    public VRRenderer(Minecraft par1Minecraft, IOculusRift rift, GuiAchievement guiAchiv )
     {
     	super( par1Minecraft );
     	this.oculusRift = rift;
     	this.guiAchievement = guiAchiv;
-    }
-
-    /**
-     * sets up player's eye (or camera in third person mode)
-     */
-    private void orientCamera(float renderPartialTicks, int renderSceneNumber)
-    {
-        EntityLiving entity = this.mc.renderViewEntity;
-        double camX = entity.prevPosX + (entity.posX - entity.prevPosX) * (double)renderPartialTicks;
-        double camY = entity.prevPosY + (entity.posY - entity.prevPosY) * (double)renderPartialTicks - (double)eyeHeightOffset;
-        double camZ = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double)renderPartialTicks;
-
-        if (!oculusRift.use)
-        {
-            GL11.glRotatef(this.prevCamRoll + (this.camRoll - this.prevCamRoll) * renderPartialTicks, 0.0F, 0.0F, 1.0F);
-        }
-
-        if (entity.isPlayerSleeping())
-        {
-            eyeHeightOffset = (float)((double)eyeHeightOffset + 1.0D);
-            GL11.glTranslatef(0.0F, 0.3F, 0.0F);
-
-            if (!this.mc.gameSettings.debugCamEnable)
-            {
-                int var10 = this.mc.theWorld.getBlockId(MathHelper.floor_double(entity.posX), MathHelper.floor_double(entity.posY), MathHelper.floor_double(entity.posZ));
-
-                if (Reflector.ForgeHooksClient_orientBedCamera.exists())
-                {
-                    Reflector.callVoid(Reflector.ForgeHooksClient_orientBedCamera, new Object[] {this.mc, entity});
-                }
-                else if (var10 == Block.bed.blockID)
-                {
-                    int var11 = this.mc.theWorld.getBlockMetadata(MathHelper.floor_double(entity.posX), MathHelper.floor_double(entity.posY), MathHelper.floor_double(entity.posZ));
-                    int var12 = var11 & 3;
-                    GL11.glRotatef((float)(var12 * 90), 0.0F, 1.0F, 0.0F);
-                }
-
-                GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks + 180.0F, 0.0F, -1.0F, 0.0F);
-                GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks, -1.0F, 0.0F, 0.0F);
-            }
-        }
-        else if (this.mc.gameSettings.thirdPersonView > 0)
-        {
-            double var27 = (double)(this.thirdPersonDistanceTemp + (this.thirdPersonDistance - this.thirdPersonDistanceTemp) * renderPartialTicks);
-            float var13;
-            float var28;
-
-            if (this.mc.gameSettings.debugCamEnable)
-            {
-                var28 = this.prevDebugCamYaw + (this.debugCamYaw - this.prevDebugCamYaw) * renderPartialTicks;
-                var13 = this.prevDebugCamPitch + (this.debugCamPitch - this.prevDebugCamPitch) * renderPartialTicks;
-                GL11.glTranslatef(0.0F, 0.0F, (float)(-var27));
-                GL11.glRotatef(var28, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(var13, 0.0F, 1.0F, 0.0F);
-            }
-            else
-            {
-                var28 = entity.rotationYaw;
-                var13 = entity.rotationPitch;
-
-                if (this.mc.gameSettings.thirdPersonView == 2)
-                {
-                    var28 += 180.0F;
-                }
-
-                double var14 = (double)(-MathHelper.sin(var13 / 180.0F * (float)Math.PI) * MathHelper.cos(var28 / 180.0F * (float)Math.PI)) * var27;
-                double var16 = (double)(MathHelper.cos(var13 / 180.0F * (float)Math.PI) * MathHelper.cos(var28 / 180.0F * (float)Math.PI)) * var27;
-                double var18 = (double)(-MathHelper.sin(var28 / 180.0F * (float)Math.PI)) * var27;
-
-                for (int var20 = 0; var20 < 8; ++var20)
-                {
-                    float var21 = (float)((var20 & 1) * 2 - 1);
-                    float var22 = (float)((var20 >> 1 & 1) * 2 - 1);
-                    float var23 = (float)((var20 >> 2 & 1) * 2 - 1);
-                    var21 *= 0.1F;
-                    var22 *= 0.1F;
-                    var23 *= 0.1F;
-                    MovingObjectPosition var24 = this.mc.theWorld.rayTraceBlocks(this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX + (double)var21, camY + (double)var22, camZ + (double)var23), this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX - var14 + (double)var21 + (double)var23, camY - var18 + (double)var22, camZ - var16 + (double)var23));
-
-                    if (var24 != null)
-                    {
-                        double var25 = var24.hitVec.distanceTo(this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX, camY, camZ));
-
-                        if (var25 < var27)
-                        {
-                            var27 = var25;
-                        }
-                    }
-                }
-
-                if (this.mc.gameSettings.thirdPersonView == 2)
-                {
-                    GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
-                }
-
-                GL11.glRotatef(entity.rotationPitch - var13, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(entity.rotationYaw - var28, 0.0F, 1.0F, 0.0F);
-                GL11.glTranslatef(0.0F, 0.0F, (float)(-var27));
-                GL11.glRotatef(var28 - entity.rotationYaw, 0.0F, 1.0F, 0.0F);
-                GL11.glRotatef(var13 - entity.rotationPitch, 1.0F, 0.0F, 0.0F);
-            }
-        }
-        else
-        {
-            if (!oculusRift.use)
-            {
-                GL11.glTranslatef(0.0F, 0.0F, -0.1F); // Original
-            }
-        }
-
-        if (!this.mc.gameSettings.debugCamEnable)
-        {
-            if (oculusRift.use)
-            {
-                this.prevCamRoll = this.camRoll;// = oculusRift.getRollDegrees_LH();
-                GL11.glRotatef(this.camRoll, 0.0F, 0.0F, 1.0F);
-            }
-
-            if (oculusRift.isInitialized())
-            {
-                // Use direct values
-                GL11.glRotatef(entity.rotationPitch, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(entity.rotationYaw + 180.0F, 0.0F, 1.0F, 0.0F);
-            }
-            else
-            {
-                GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks, 1.0F, 0.0F, 0.0F);
-                GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks + 180.0F, 0.0F, 1.0F, 0.0F);
-            }
-        }
-
-
-        if (this.mc.gameSettings.thirdPersonView == 0)
-        {
-            //GL11.glTranslatef(0.0F, neckBaseToEyeHeight, 0.0F); eyeHeightOffset
-            GL11.glTranslatef(0.0F, eyeHeightOffset, 0.0F);
-        }
-        else
-        {
-            //GL11.glTranslatef(0.0F, neckBaseToEyeHeight, -0.1F);
-            GL11.glTranslatef(0.0F, eyeHeightOffset, 0.0F);
-        }
-        camX = entity.prevPosX + (entity.posX - entity.prevPosX) * (double)renderPartialTicks;
-        camY = entity.prevPosY + (entity.posY - entity.prevPosY) * (double)renderPartialTicks - (double)eyeHeightOffset;
-        camZ = entity.prevPosZ + (entity.posZ - entity.prevPosZ) * (double)renderPartialTicks;
-        this.cloudFog = this.mc.renderGlobal.hasCloudFog(camX, camY, camZ, renderPartialTicks);
+    	
+    	try
+    	{
+    		GL30.glBindVertexArray(0);
+    		superSampleSupported = true;
+    		
+    	}
+    	catch( IllegalStateException e )
+    	{
+    		superSampleSupported = false;
+    		
+    	}
     }
 
     /**
@@ -239,12 +108,6 @@ public class Renderer extends EntityRenderer
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
-
-        if (this.cameraZoom != 1.0D)
-        {
-            GL11.glTranslatef((float) this.cameraYaw, (float) (-this.cameraPitch), 0.0F);
-            GL11.glScaled(this.cameraZoom, this.cameraZoom, 1.0D);
-        }
 
         if (renderSceneNumber == 0)
         {
@@ -271,22 +134,7 @@ public class Renderer extends EntityRenderer
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glLoadIdentity();
 
-        EntityLiving entity = this.mc.renderViewEntity;
-        float playerHeight = 1.62f;
-        eyeProtrusion = -0.09f;
-        neckBaseToEyeHeight = 0.15f;
-        eyeHeightOffset = entity.yOffset - playerHeight;
-        float scaleFactor = 1.0f;
-
-        playerHeight = 1.74f;//oculusRift.getEyeHeight();    // TODO Set player height here
-        eyeHeightOffset = entity.yOffset - (playerHeight - neckBaseToEyeHeight);
-
-        if (this.mc.gameSettings.thirdPersonView == 0)
-        {
-            eyeProtrusion = -0.185f * scaleFactor;   // -0.135f
-            neckBaseToEyeHeight = 0.225f * scaleFactor;
-            eyeHeightOffset = entity.yOffset - (playerHeight - neckBaseToEyeHeight);
-        }
+        //First, IPD transformation (and possible toe-in)
         if (renderSceneNumber == 0)
         {
             // Left eye
@@ -300,21 +148,24 @@ public class Renderer extends EntityRenderer
             GL11.glMultMatrix(rightEyeTransform);
         }
 
-        GL11.glTranslatef(0.0f, 0.0F, -eyeProtrusion);
-        GL11.glTranslatef(0.0f, -neckBaseToEyeHeight, 0.0F);
+        //Next, possible neck-model transformation
+        EntityLiving entity = this.mc.renderViewEntity;
+	    float cameraYOffset = entity.yOffset - (this.mc.gameSettings.playerHeight - this.mc.gameSettings.neckBaseToEyeHeight);
+	    GL11.glTranslatef(0.0f, -this.mc.gameSettings.neckBaseToEyeHeight, this.mc.gameSettings.eyeProtrusion);
 
-        if (this.mc.gameSettings.anaglyph)
-        {
-            GL11.glTranslatef((float)(renderSceneNumber * 2 - 1) * 0.1F, 0.0F, 0.0F);
-        }
 
+        //A few game effects
         this.hurtCameraEffect(renderPartialTicks);
 
         if (this.mc.gameSettings.viewBobbing)
         {
             this.setupViewBobbing(renderPartialTicks);
         }
-
+        
+        double camX = renderViewEntityX;
+        double camY = renderViewEntityY - cameraYOffset;
+        double camZ = renderViewEntityZ;
+      
         var5 = this.mc.thePlayer.prevTimeInPortal + (this.mc.thePlayer.timeInPortal - this.mc.thePlayer.prevTimeInPortal) * renderPartialTicks;
 
         if (var5 > 0.0F)
@@ -333,7 +184,117 @@ public class Renderer extends EntityRenderer
             GL11.glRotatef(-((float)this.rendererUpdateCount + renderPartialTicks) * (float)var6, 0.0F, 1.0F, 1.0F);
         }
 
-        this.orientCamera(renderPartialTicks, renderSceneNumber );
+        if (entity.isPlayerSleeping())
+        {
+            
+            if (!this.mc.gameSettings.debugCamEnable) 
+            {
+            	cameraYOffset = (float)((double)cameraYOffset + 1.0D);
+                GL11.glTranslatef(0.0F, 0.3F, 0.0F);
+
+                int var10 = this.mc.theWorld.getBlockId(MathHelper.floor_double(entity.posX), MathHelper.floor_double(entity.posY), MathHelper.floor_double(entity.posZ));
+
+                if (Reflector.ForgeHooksClient_orientBedCamera.exists())
+                {
+                    Reflector.callVoid(Reflector.ForgeHooksClient_orientBedCamera, new Object[] {this.mc, entity});
+                }
+                else if (var10 == Block.bed.blockID)
+                {
+                    int var11 = this.mc.theWorld.getBlockMetadata(MathHelper.floor_double(entity.posX), MathHelper.floor_double(entity.posY), MathHelper.floor_double(entity.posZ));
+                    int var12 = var11 & 3;
+                    GL11.glRotatef((float)(var12 * 90), 0.0F, 1.0F, 0.0F);
+                }
+
+                GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks + 180.0F, 0.0F, -1.0F, 0.0F);
+                GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks, -1.0F, 0.0F, 0.0F);
+            }
+        }
+        else if (this.mc.gameSettings.thirdPersonView > 0)
+        {
+            double thirdPersonCameraDist = (double)(this.thirdPersonDistanceTemp + (this.thirdPersonDistance - this.thirdPersonDistanceTemp) * renderPartialTicks);
+            float thirdPersonYaw;
+            float thirdPersonPitch;
+
+            if (this.mc.gameSettings.debugCamEnable)
+            {
+                thirdPersonYaw = this.prevDebugCamYaw + (this.debugCamYaw - this.prevDebugCamYaw) * renderPartialTicks;
+                thirdPersonPitch = this.prevDebugCamPitch + (this.debugCamPitch - this.prevDebugCamPitch) * renderPartialTicks;
+                GL11.glTranslatef(0.0F, 0.0F, (float)(-thirdPersonCameraDist));
+                GL11.glRotatef(thirdPersonYaw, 1.0F, 0.0F, 0.0F);
+                GL11.glRotatef(thirdPersonPitch, 0.0F, 1.0F, 0.0F);
+            }
+            else
+            {
+                thirdPersonYaw = entity.rotationYaw;
+                thirdPersonPitch = entity.rotationPitch;
+
+                if (this.mc.gameSettings.thirdPersonView == 2)
+                {
+                    thirdPersonPitch += 180.0F;
+                }
+
+                double camXOffset = (double)(-MathHelper.sin(thirdPersonYaw / 180.0F * (float)Math.PI) * MathHelper.cos(thirdPersonPitch / 180.0F * (float)Math.PI)) * thirdPersonCameraDist;
+                double camZOffset = (double)( MathHelper.cos(thirdPersonYaw / 180.0F * (float)Math.PI) * MathHelper.cos(thirdPersonPitch / 180.0F * (float)Math.PI)) * thirdPersonCameraDist;
+                double camYOffset = (double)(-MathHelper.sin(thirdPersonPitch   / 180.0F * (float)Math.PI)) * thirdPersonCameraDist;
+                
+                //This loop offsets at [-.1, -.1, -.1], [.1,-.1,-.1], [.1,.1,-.1] etc... for all 8 directions
+                for (int var20 = 0; var20 < 8; ++var20)
+                {
+                    float var21 = (float)((var20 & 1) * 2 - 1);
+                    float var22 = (float)((var20 >> 1 & 1) * 2 - 1);
+                    float var23 = (float)((var20 >> 2 & 1) * 2 - 1);
+                    var21 *= 0.1F;
+                    var22 *= 0.1F;
+                    var23 *= 0.1F;
+                    MovingObjectPosition var24 = this.mc.theWorld.rayTraceBlocks(
+                    		this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX + (double)var21, camY + (double)var22, camZ + (double)var23), 
+                    		this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX - camXOffset + (double)var21 + (double)var23, camY - camYOffset + (double)var22, camZ - camZOffset + (double)var23));
+
+                    if (var24 != null)
+                    {
+                        double var25 = var24.hitVec.distanceTo(this.mc.theWorld.getWorldVec3Pool().getVecFromPool(camX, camY, camZ));
+
+                        if (var25 < thirdPersonCameraDist)
+                        {
+                            thirdPersonCameraDist = var25;
+                        }
+                    }
+                }
+
+                if (this.mc.gameSettings.thirdPersonView == 2)
+                {
+                    GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
+                }
+
+                GL11.glRotatef(entity.rotationPitch - thirdPersonPitch, 1.0F, 0.0F, 0.0F);
+                GL11.glRotatef(entity.rotationYaw - thirdPersonYaw, 0.0F, 1.0F, 0.0F);
+                GL11.glTranslatef(0.0F, 0.0F, (float)(-thirdPersonCameraDist));
+                GL11.glRotatef(thirdPersonYaw - entity.rotationYaw, 0.0F, 1.0F, 0.0F);
+                GL11.glRotatef(thirdPersonPitch - entity.rotationPitch, 1.0F, 0.0F, 0.0F);
+            }
+        }
+        
+
+        if (!this.mc.gameSettings.debugCamEnable)
+        {
+            this.prevCamRoll = this.camRoll;
+            GL11.glRotatef(this.camRoll, 0.0F, 0.0F, 1.0F);
+
+            if (oculusRift.isInitialized())
+            {
+                // Use direct values
+                GL11.glRotatef(entity.rotationPitch, 1.0F, 0.0F, 0.0F);
+                GL11.glRotatef(entity.rotationYaw + 180.0F, 0.0F, 1.0F, 0.0F);
+            }
+            else
+            {
+                GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks, 1.0F, 0.0F, 0.0F);
+                GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks + 180.0F, 0.0F, 1.0F, 0.0F);
+            }
+        }
+
+
+        GL11.glTranslatef(0.0F, cameraYOffset, 0.0F);
 
         if (this.debugViewDirection > 0)
         {
@@ -368,26 +329,22 @@ public class Renderer extends EntityRenderer
     
     protected void updateCamera( float renderPartialTicks, boolean displayActive )
     {
-        if (oculusRift.use && oculusRift.isInitialized() && this.mc.gameSettings.useHeadTracking)
+        if (oculusRift.isInitialized() && this.mc.gameSettings.useHeadTracking)
         {
             this.mc.mcProfiler.startSection("oculus");
 
-            if (displayActive)   // TODO: Continue to allow head input even if we are in a in game menu
+            if (displayActive)
             {
-                float adjustedMouseDeltaX = 0.0f;
-                float adjustedMouseDeltaY = 0.0f;
-
-                // Read Oculus tracker orientation
+                // Read head tracker orientation
                 oculusRift.poll();
 
-                // TODO: Allow additional mouse yaw input
                 if (this.mc.inGameHasFocus && displayActive)
                 {
                     this.mc.mouseHelper.mouseXYChange();
                     float mouseSensitivityMultiplier1 = this.mc.gameSettings.mouseSensitivity * 0.6F + 0.2F;
                     float mouseSensitivityMultiplier2 = mouseSensitivityMultiplier1 * mouseSensitivityMultiplier1 * mouseSensitivityMultiplier1 * 8.0F;
-                    adjustedMouseDeltaX = (float)this.mc.mouseHelper.deltaX * mouseSensitivityMultiplier2;
-                    adjustedMouseDeltaY = (float)this.mc.mouseHelper.deltaY * mouseSensitivityMultiplier2;
+                    float adjustedMouseDeltaX = (float)this.mc.mouseHelper.deltaX * mouseSensitivityMultiplier2;
+                    float adjustedMouseDeltaY = (float)this.mc.mouseHelper.deltaY * mouseSensitivityMultiplier2;
                     byte yDirection = -1;
 
                     if (this.mc.gameSettings.invertMouse)
@@ -415,28 +372,21 @@ public class Renderer extends EntityRenderer
                         totalMousePitchDelta = -180.f;
                 }
 
-                oculusYaw = (totalMouseYawDelta + (oculusRift.getYawDegrees_LH() * this.mc.gameSettings.headTrackSensitivity)) % 360;
-                if (this.mc.gameSettings.allowMousePitchInput)
-                {
-                    oculusPitch = (totalMousePitchDelta + (oculusRift.getPitchDegrees_LH() * this.mc.gameSettings.headTrackSensitivity));
-                }
-                else
-                {
-                    oculusPitch = oculusRift.getPitchDegrees_LH() * this.mc.gameSettings.headTrackSensitivity;
-                }
-
+                float oculusYaw   = (totalMouseYawDelta                                                  + (oculusRift.getYawDegrees_LH()   * this.mc.gameSettings.headTrackSensitivity)) % 360;
+                float oculusPitch = (mc.gameSettings.allowMousePitchInput ? totalMousePitchDelta: 0.0f ) + (oculusRift.getPitchDegrees_LH() * this.mc.gameSettings.headTrackSensitivity) ;
+                
                 // Correct for gimbal lock prevention
-                if (oculusPitch > oculusRift.MAXPITCH)
-                    oculusPitch = oculusRift.MAXPITCH;
-                else if (oculusPitch < -oculusRift.MAXPITCH)
-                    oculusPitch = -oculusRift.MAXPITCH;
+                if (oculusPitch > IOculusRift.MAXPITCH)
+                    oculusPitch = IOculusRift.MAXPITCH;
+                else if (oculusPitch < -IOculusRift.MAXPITCH)
+                    oculusPitch = -IOculusRift.MAXPITCH;
                                                              // Roll multiplier is a one-way trip to barf-ville!
                 float roll = oculusRift.getRollDegrees_LH() * this.mc.gameSettings.headTrackSensitivity;
 
-                if (roll > oculusRift.MAXROLL)
-                    roll = oculusRift.MAXROLL;
-                else if (roll < -oculusRift.MAXROLL)
-                    roll = -oculusRift.MAXROLL;
+                if (roll > IOculusRift.MAXROLL)
+                    roll = IOculusRift.MAXROLL;
+                else if (roll < -IOculusRift.MAXROLL)
+                    roll = -IOculusRift.MAXROLL;
 
                 if (this.mc.thePlayer != null)
                 {
@@ -465,12 +415,9 @@ public class Renderer extends EntityRenderer
         EntityLiving renderViewEntity = this.mc.renderViewEntity;
         RenderGlobal renderGlobal = this.mc.renderGlobal;
         EffectRenderer effectRenderer = this.mc.effectRenderer;
-        double renderViewEntityX = renderViewEntity.lastTickPosX + (renderViewEntity.posX - renderViewEntity.lastTickPosX) * (double)renderPartialTicks;
-        double renderViewEntityY = renderViewEntity.lastTickPosY + (renderViewEntity.posY - renderViewEntity.lastTickPosY) * (double)renderPartialTicks;
-        double renderViewEntityZ = renderViewEntity.lastTickPosZ + (renderViewEntity.posZ - renderViewEntity.lastTickPosZ) * (double)renderPartialTicks;
         this.mc.mcProfiler.endStartSection("center");
 
-        if (this.mc.gameSettings.useSupersample)
+        if ( superSampleSupported && this.mc.gameSettings.useSupersample)
         {
             eyeRenderParams = oculusRift.getEyeRenderParams(0,
                     0,
@@ -544,60 +491,63 @@ public class Renderer extends EntityRenderer
                 GL30.glDeleteFramebuffers(_GUIframeBufferId);
                 _GUIframeBufferId = -1;
             }
-
-            // Supersampled result FBO(s)
-            if (_Lanczos_GUIdepthRenderBufferId1 != -1)
+            if( superSampleSupported )
             {
-                GL30.glDeleteRenderbuffers(_Lanczos_GUIdepthRenderBufferId1);
-                _Lanczos_GUIdepthRenderBufferId1 = -1;
-            }
 
-            if (_Lanczos_GUIcolorTextureId1 != -1)
-            {
-                GL11.glDeleteTextures(_Lanczos_GUIcolorTextureId1);
-                _Lanczos_GUIcolorTextureId1 = -1;
+	            // Supersampled result FBO(s)
+	            if (_Lanczos_GUIdepthRenderBufferId1 != -1)
+	            {
+	                GL30.glDeleteRenderbuffers(_Lanczos_GUIdepthRenderBufferId1);
+	                _Lanczos_GUIdepthRenderBufferId1 = -1;
+	            }
+	
+	            if (_Lanczos_GUIcolorTextureId1 != -1)
+	            {
+	                GL11.glDeleteTextures(_Lanczos_GUIcolorTextureId1);
+	                _Lanczos_GUIcolorTextureId1 = -1;
+	            }
+	
+	            if (_Lanczos_GUIframeBufferId1 != -1)
+	            {
+	                GL30.glDeleteFramebuffers(_Lanczos_GUIframeBufferId1);
+	                _Lanczos_GUIframeBufferId1 = -1;
+	            }
+	
+	            if (_Lanczos_GUIdepthRenderBufferId2 != -1)
+	            {
+	                GL30.glDeleteRenderbuffers(_Lanczos_GUIdepthRenderBufferId2);
+	                _Lanczos_GUIdepthRenderBufferId2 = -1;
+	            }
+	
+	            if (_Lanczos_GUIcolorTextureId2 != -1)
+	            {
+	                GL11.glDeleteTextures(_Lanczos_GUIcolorTextureId2);
+	                _Lanczos_GUIcolorTextureId2 = -1;
+	            }
+	
+	            if (_Lanczos_GUIframeBufferId2 != -1)
+	            {
+	                GL30.glDeleteFramebuffers(_Lanczos_GUIframeBufferId2);
+	                _Lanczos_GUIframeBufferId2 = -1;
+	            }
+	
+	            destroyVBO();
             }
-
-            if (_Lanczos_GUIframeBufferId1 != -1)
-            {
-                GL30.glDeleteFramebuffers(_Lanczos_GUIframeBufferId1);
-                _Lanczos_GUIframeBufferId1 = -1;
-            }
-
-            if (_Lanczos_GUIdepthRenderBufferId2 != -1)
-            {
-                GL30.glDeleteRenderbuffers(_Lanczos_GUIdepthRenderBufferId2);
-                _Lanczos_GUIdepthRenderBufferId2 = -1;
-            }
-
-            if (_Lanczos_GUIcolorTextureId2 != -1)
-            {
-                GL11.glDeleteTextures(_Lanczos_GUIcolorTextureId2);
-                _Lanczos_GUIcolorTextureId2 = -1;
-            }
-
-            if (_Lanczos_GUIframeBufferId2 != -1)
-            {
-                GL30.glDeleteFramebuffers(_Lanczos_GUIframeBufferId2);
-                _Lanczos_GUIframeBufferId2 = -1;
-            }
-
-            destroyVBO();
             _position_id = -1;
             _inputTextureCoordinate_id = -1;
         }
 
-        if (oculusRift.use && !_FBOInitialised)
+        if (!_FBOInitialised)
         {
             FBOParams mainFboParams = null;
             System.out.println("Width: " + this.mc.displayWidth + ", Height: " + this.mc.displayHeight);
-            if (!this.mc.gameSettings.useSupersample)
+            if ( superSampleSupported && this.mc.gameSettings.useSupersample)
             {
-                mainFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * eyeRenderParams._renderScale), (int)ceil(this.mc.displayHeight * eyeRenderParams._renderScale));
+                mainFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * eyeRenderParams._renderScale * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * eyeRenderParams._renderScale * this.mc.gameSettings.superSampleScaleFactor));
             }
             else
             {
-                mainFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * eyeRenderParams._renderScale * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * eyeRenderParams._renderScale * this.mc.gameSettings.superSampleScaleFactor));
+                mainFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * eyeRenderParams._renderScale), (int)ceil(this.mc.displayHeight * eyeRenderParams._renderScale));
             }
             mc.checkGLError("FBO create");
 
@@ -624,43 +574,46 @@ public class Renderer extends EntityRenderer
             _GUIdepthRenderBufferId = GUIFboParams._depthRenderBufferId;
             _GUIshaderProgramId = initOculusShaders(OCULUS_BASIC_VERTEX_SHADER, OCULUS_BASIC_FRAGMENT_SHADER, false);
             mc.checkGLError("FBO init GUI shader");
-
-            // Lanczos downsample FBOs
-            FBOParams lanczosInitialFboParams = new FBOParams();
-            FBOParams lanczosAfter1stPassFboParams = new FBOParams();
-            if (this.mc.gameSettings.useSupersample)
+            
+            if( superSampleSupported )
             {
-                lanczosInitialFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
-                lanczosAfter1stPassFboParams = createFBO(false, (int)ceil(this.mc.displayWidth), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
-            }
-
-            mc.checkGLError("Lanczos FBO create");
-
-            _Lanczos_GUIframeBufferId1 = lanczosInitialFboParams._frameBufferId;
-            _Lanczos_GUIcolorTextureId1 = lanczosInitialFboParams._colorTextureId;
-            _Lanczos_GUIdepthRenderBufferId1 = lanczosInitialFboParams._depthRenderBufferId;
-
-            _Lanczos_GUIframeBufferId2 = lanczosAfter1stPassFboParams._frameBufferId;
-            _Lanczos_GUIcolorTextureId2 = lanczosAfter1stPassFboParams._colorTextureId;
-            _Lanczos_GUIdepthRenderBufferId2 = lanczosAfter1stPassFboParams._depthRenderBufferId;
-
-            if (this.mc.gameSettings.useSupersample)
-            {
-                _Lanczos_shaderProgramId = initOculusShaders(LANCZOS_SAMPLER_VERTEX_SHADER, LANCZOS_SAMPLER_FRAGMENT_SHADER, true);
-                mc.checkGLError("@1");
-
-
-                GL20.glValidateProgram(_Lanczos_shaderProgramId);
-
-                mc.checkGLError("FBO init Lanczos shader");
-
-                setupQuad();
-
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-            }
-            else
-            {
-                _Lanczos_shaderProgramId = -1;
+	            // Lanczos downsample FBOs
+	            FBOParams lanczosInitialFboParams = new FBOParams();
+	            FBOParams lanczosAfter1stPassFboParams = new FBOParams();
+	            if (this.mc.gameSettings.useSupersample)
+	            {
+	                lanczosInitialFboParams = createFBO(false, (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
+	                lanczosAfter1stPassFboParams = createFBO(false, (int)ceil(this.mc.displayWidth), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
+	            }
+	
+	            mc.checkGLError("Lanczos FBO create");
+	
+	            _Lanczos_GUIframeBufferId1 = lanczosInitialFboParams._frameBufferId;
+	            _Lanczos_GUIcolorTextureId1 = lanczosInitialFboParams._colorTextureId;
+	            _Lanczos_GUIdepthRenderBufferId1 = lanczosInitialFboParams._depthRenderBufferId;
+	
+	            _Lanczos_GUIframeBufferId2 = lanczosAfter1stPassFboParams._frameBufferId;
+	            _Lanczos_GUIcolorTextureId2 = lanczosAfter1stPassFboParams._colorTextureId;
+	            _Lanczos_GUIdepthRenderBufferId2 = lanczosAfter1stPassFboParams._depthRenderBufferId;
+	
+	            if (this.mc.gameSettings.useSupersample)
+	            {
+	                _Lanczos_shaderProgramId = initOculusShaders(LANCZOS_SAMPLER_VERTEX_SHADER, LANCZOS_SAMPLER_FRAGMENT_SHADER, true);
+	                mc.checkGLError("@1");
+	
+	
+	                GL20.glValidateProgram(_Lanczos_shaderProgramId);
+	
+	                mc.checkGLError("FBO init Lanczos shader");
+	
+	                setupQuad();
+	
+	                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+	            }
+	            else
+	            {
+	                _Lanczos_shaderProgramId = -1;
+	            }
             }
 
 
@@ -668,10 +621,16 @@ public class Renderer extends EntityRenderer
             _FBOInitialised = true;
         }
 
-        // TODO: Render stereo pairs as per anaglyph mode here (based around this for loop)
+        //Used by fog comparison, 3rd person camera/block collision detection, and getMouseOver
+        renderViewEntityX = renderViewEntity.lastTickPosX + (renderViewEntity.posX - renderViewEntity.lastTickPosX) * (double)renderPartialTicks;
+        renderViewEntityY = renderViewEntity.lastTickPosY + (renderViewEntity.posY - renderViewEntity.lastTickPosY) * (double)renderPartialTicks;
+        renderViewEntityZ = renderViewEntity.lastTickPosZ + (renderViewEntity.posZ - renderViewEntity.lastTickPosZ) * (double)renderPartialTicks;
+        //Looks like cloudFog is no longer used
+        //this.cloudFog = this.mc.renderGlobal.hasCloudFog(renderViewEntityX, renderViewEntityY, renderViewEntityZ, renderPartialTicks);
+
         for (int renderSceneNumber = 0; renderSceneNumber < 2; ++renderSceneNumber)
         {
-            if (oculusRift.use && this.mc.gameSettings.useDistortion)
+            if (mc.gameSettings.useDistortion)
             {
                 GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, _frameBufferId);
                 mc.checkGLError("fb");
@@ -696,74 +655,63 @@ public class Renderer extends EntityRenderer
             }
             else
             {
-                // TODO: Set color mask anyway?
                 GL11.glColorMask(true, true, true, true);
             }
 
             this.mc.mcProfiler.endStartSection("clear");
-            if (oculusRift.use)
+            GL11.glEnable(GL11.GL_SCISSOR_TEST);
+            mc.checkGLError("scissor");
+
+            if (renderSceneNumber == 0)
             {
-                GL11.glEnable(GL11.GL_SCISSOR_TEST);
-                mc.checkGLError("scissor");
+                // Left eye
+                GL11.glViewport((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
+                mc.checkGLError("56");
 
-                if (renderSceneNumber == 0)
-                {
-                    // Left eye
-                    GL11.glViewport((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
-                    mc.checkGLError("56");
-
-                    GL11.glScissor((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
-                            (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
-                    mc.checkGLError("34");
-                }
-                else
-                {
-                    // Right eye
-                    GL11.glViewport((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
-                                    (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
-                                    (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
-                                    (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
-
-                    mc.checkGLError("11");
-                    GL11.glScissor((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
-                                   (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
-                                   (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
-                                   (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
-                }
-
-                mc.checkGLError("FBO viewport / scissor setup");
+                GL11.glScissor((int)ceil(eyeRenderParams._leftViewPortX * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortY * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortW * eyeRenderParams._renderScale),
+                        (int)ceil(eyeRenderParams._leftViewPortH * eyeRenderParams._renderScale));
+                mc.checkGLError("34");
             }
             else
             {
-                GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
+                // Right eye
+                GL11.glViewport((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
+                                (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
+                                (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
+                                (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
+
+                mc.checkGLError("11");
+                GL11.glScissor((int)ceil(eyeRenderParams._rightViewPortX * eyeRenderParams._renderScale),
+                               (int)ceil(eyeRenderParams._rightViewPortY * eyeRenderParams._renderScale),
+                               (int)ceil(eyeRenderParams._rightViewPortW * eyeRenderParams._renderScale),
+                               (int)ceil(eyeRenderParams._rightViewPortH * eyeRenderParams._renderScale));
             }
 
-            if (oculusRift.use)
-            {
-                GL11.glClear (GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-                this.updateFogColor(renderPartialTicks);
-                GL11.glClearColor (fogColorRed, fogColorGreen, fogColorBlue, 0.5f);
-                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-                GL11.glEnable(GL11.GL_DEPTH_TEST);
-                GL11.glEnable(GL11.GL_CULL_FACE);
-                GL11.glEnable(GL11.GL_TEXTURE_2D);
-                GL11.glShadeModel(GL11.GL_SMOOTH);
-                GL11.glEnable(GL11.GL_DEPTH_TEST);
-                GL11.glDepthFunc(GL11.GL_LEQUAL);
-                GL11.glEnable(GL11.GL_ALPHA_TEST);
-                GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
-                GL11.glCullFace(GL11.GL_BACK);
-                GL11.glMatrixMode(GL11.GL_PROJECTION);
-                GL11.glLoadIdentity();
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-                mc.checkGLError("FBO init");
-            }
+            mc.checkGLError("FBO viewport / scissor setup");
+
+            GL11.glClear (GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            this.updateFogColor(renderPartialTicks);
+            GL11.glClearColor (fogColorRed, fogColorGreen, fogColorBlue, 0.5f);
+            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glEnable(GL11.GL_CULL_FACE);
+            GL11.glEnable(GL11.GL_TEXTURE_2D);
+            GL11.glShadeModel(GL11.GL_SMOOTH);
+            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            GL11.glDepthFunc(GL11.GL_LEQUAL);
+            GL11.glEnable(GL11.GL_ALPHA_TEST);
+            GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
+            GL11.glCullFace(GL11.GL_BACK);
+            GL11.glMatrixMode(GL11.GL_PROJECTION);
+            GL11.glLoadIdentity();
+            GL11.glMatrixMode(GL11.GL_MODELVIEW);
+            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+            mc.checkGLError("FBO init");
 
             this.mc.mcProfiler.startSection("lightTex");
             if (this.lightmapUpdateNeeded)
@@ -773,7 +721,10 @@ public class Renderer extends EntityRenderer
 
             this.mc.mcProfiler.endStartSection("camera");
 
+            //transform camera with pitch,yaw,roll + neck model + game effects 
             this.setupCameraTransform(renderPartialTicks, renderSceneNumber);
+            
+            
             ActiveRenderInfo.updateRenderInfo(this.mc.thePlayer, this.mc.gameSettings.thirdPersonView == 2);
             this.mc.mcProfiler.endStartSection("frustrum");
             ClippingHelperImpl.getInstance(); // setup clip, using current modelview / projection matrices
@@ -804,7 +755,7 @@ public class Renderer extends EntityRenderer
 
             this.mc.renderGlobal.clipRenderersByFrustum(frustrum, renderPartialTicks);
 
-            if (renderSceneNumber == 0/* || oculusRift.use*/)
+            if (renderSceneNumber == 0 )
             {
                 this.mc.mcProfiler.endStartSection("updatechunks");
 
@@ -851,7 +802,6 @@ public class Renderer extends EntityRenderer
                 {
                     Reflector.callVoid(Reflector.ForgeHooksClient_setRenderPass, new Object[] {Integer.valueOf(-1)});
                 }
-
                 this.enableLightmap((double) renderPartialTicks);
                 this.mc.mcProfiler.endStartSection("litParticles");
                 effectRenderer.renderLitParticles(renderViewEntity, renderPartialTicks);
@@ -973,23 +923,62 @@ public class Renderer extends EntityRenderer
                 Reflector.callVoid(Reflector.ForgeHooksClient_dispatchRenderLast, new Object[] {renderGlobal, Float.valueOf(renderPartialTicks)});
             }
 
-            this.mc.mcProfiler.endStartSection("hand");
-
-            if (this.cameraZoom == 1.0D)
-            {
-                GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT);
-                //this.renderHand(renderPartialTicks, renderSceneNumber, oculusRift, eyeRenderParams);     // TODO: Never render hand
-            }
-
             // Add GUI overlay
             if (!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null  )
             {
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                GL11.glPushMatrix();
-                GL11.glLoadIdentity();
-                GL11.glMatrixMode(GL11.GL_PROJECTION);
-                GL11.glPushMatrix();
-                GL11.glLoadIdentity();
+                
+            	//Draw crosshair
+            	
+
+                GL11.glClear( GL11.GL_DEPTH_BUFFER_BIT);
+                GL11.glPointSize(5.0f);
+                GL11.glBegin(GL11.GL_POINTS);
+                GL11.glColor3f(1.0f, 1.0f, 1.0f);
+                pointX = 0;
+                pointY = 0;
+                pointZ = 0;
+                GL11.glVertex3f(pointX, pointY, pointZ);
+                GL11.glEnd();
+	            this.mc.mcProfiler.endStartSection("crosshair");
+	            this.mc.renderEngine.bindTexture("/gui/icons.png");
+
+		        MovingObjectPosition crossPos = this.mc.objectMouseOver;
+		        if( crossPos == null )
+		        {
+		        	crossPos = this.mc.renderViewEntity.rayTrace(128, renderPartialTicks);
+		        }
+		        if( crossPos != null )
+		        {
+		        	float crossX = (float)(crossPos.hitVec.xCoord - renderViewEntityX);
+		        	float crossY = (float)(crossPos.hitVec.yCoord - renderViewEntityY);
+		        	float crossZ = (float)(crossPos.hitVec.zCoord - renderViewEntityZ);
+
+			        float var7 = 0.00390625F;
+			        float var8 = 0.00390625F;
+			        Tessellator.instance.startDrawingQuads();
+			        Tessellator.instance.addVertexWithUV(- 1, + 1, 0,  0     , 16* var8);
+			        Tessellator.instance.addVertexWithUV(+ 1, + 1, 0, 16*var7, 16* var8);
+			        Tessellator.instance.addVertexWithUV(+ 1, - 1, 0, 16*var7, 0       );
+			        Tessellator.instance.addVertexWithUV(- 1, - 1, 0, 0      , 0       );
+
+		            GL11.glPushMatrix();
+		            GL11.glTranslatef(crossX, crossY, crossZ);
+		            GL11.glNormal3f(0.0F, 1.0F, 0.0F);
+		            GL11.glRotatef(-RenderManager.instance.playerViewY, 0.0F, 1.0F, 0.0F);
+		            GL11.glRotatef(RenderManager.instance.playerViewX, 1.0F, 0.0F, 0.0F);
+		            float scale = 0.05f*(float)Math.sqrt((crossX*crossX + crossY*crossY + crossZ*crossZ));
+		            GL11.glScalef(-scale, -scale, scale);
+		            GL11.glDisable(GL11.GL_LIGHTING);
+		            GL11.glEnable(GL11.GL_DEPTH_TEST);
+		            GL11.glEnable(GL11.GL_BLEND);
+		            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			        GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.5f); //white crosshair
+			        Tessellator.instance.draw();
+			        GL11.glDisable(GL11.GL_BLEND);
+			        GL11.glPopMatrix();
+		        }
+
+                
                 GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
                 GL11.glDisable(GL11.GL_SCISSOR_TEST);
@@ -1021,9 +1010,11 @@ public class Renderer extends EntityRenderer
                 GL11.glEnable(GL11.GL_ALPHA_TEST);
                 GL11.glAlphaFunc(GL11.GL_GREATER, 0.1F);
                 GL11.glCullFace(GL11.GL_BACK);
+
                 GL11.glMatrixMode(GL11.GL_PROJECTION);
                 GL11.glLoadIdentity();
                 GL11.glMatrixMode(GL11.GL_MODELVIEW);
+
                 GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL11.glColorMask(true, true, true, true);
                 mc.checkGLError("FBO init");
@@ -1081,7 +1072,7 @@ public class Renderer extends EntityRenderer
                 }
 
                 // Switch back to previous framebuffer
-                if (oculusRift.use && this.mc.gameSettings.useDistortion)
+                if (mc.gameSettings.useDistortion)
                 {
                     GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, _frameBufferId);
                     mc.checkGLError("GUI fb");
@@ -1139,32 +1130,24 @@ public class Renderer extends EntityRenderer
 
                 GL11.glColor3f(1, 1, 1);                                               // set the color to white
 
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 drawQuad2(this.mc.displayWidth, this.mc.displayHeight, this.mc.gameSettings.hudScale);
 
                 // Stop shader use
                 ARBShaderObjects.glUseProgramObjectARB(0);
 
                 //GL11.glFlush();
-
-                GL11.glMatrixMode(GL11.GL_PROJECTION);
-                GL11.glPopMatrix();
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
-                GL11.glPopMatrix();
-
                 GL11.glDisable(GL11.GL_BLEND);
+
             }
 
-            if (!this.mc.gameSettings.anaglyph && !oculusRift.use)
-            {
-                this.mc.mcProfiler.endSection();
-                return;
-            }
+
         }
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
         GL11.glDisable(GL11.GL_BLEND);
 
-        if (oculusRift.use && this.mc.gameSettings.useDistortion)
+        if (mc.gameSettings.useDistortion)
         {
             mc.checkGLError("Before distortion");
 
@@ -1173,13 +1156,13 @@ public class Renderer extends EntityRenderer
             OpenGlHelper.setActiveTexture(textureUnit);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, _colorTextureId);
 
-            if (!this.mc.gameSettings.useSupersample)
+            if ( superSampleSupported && this.mc.gameSettings.useSupersample)
             {
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);                    // switch to rendering on the framebuffer
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, _Lanczos_GUIframeBufferId1);    // switch to rendering on our to-be-lanczos sampled framebuffer
             }
             else
             {
-                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, _Lanczos_GUIframeBufferId1);    // switch to rendering on our to-be-lanczos sampled framebuffer
+                GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);                    // switch to rendering on the framebuffer
             }
 
             GL11.glClearColor (1.0f, 1.0f, 1.0f, 0.5f);
@@ -1187,13 +1170,13 @@ public class Renderer extends EntityRenderer
             GL11.glClear (GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);            // Clear Screen And Depth Buffer on the framebuffer to black
 
             // Render onto the entire screen framebuffer
-            if (!this.mc.gameSettings.useSupersample)
+            if (superSampleSupported && this.mc.gameSettings.useSupersample)
             {
-                GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
+                GL11.glViewport(0, 0, (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
             }
             else
             {
-                GL11.glViewport(0, 0, (int)ceil(this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor), (int)ceil(this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor));
+                GL11.glViewport(0, 0, this.mc.displayWidth, this.mc.displayHeight);
             }
             mc.checkGLError("3");
 
@@ -1211,7 +1194,7 @@ public class Renderer extends EntityRenderer
             float rx = 0;
             float ry = 0;
 
-            if (this.mc.gameSettings.useDistortion && this.mc.gameSettings.useSupersample)
+            if (this.mc.gameSettings.useDistortion && superSampleSupported && this.mc.gameSettings.useSupersample)
             {
                 lw = eyeRenderParams._leftViewPortW / ((float)this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor);
                 lh = eyeRenderParams._leftViewPortH / ((float)this.mc.displayHeight * this.mc.gameSettings.superSampleScaleFactor);
@@ -1254,7 +1237,7 @@ public class Renderer extends EntityRenderer
 
             // Set up the fragment shader uniforms
             ARBShaderObjects.glUniform1iARB(ARBShaderObjects.glGetUniformLocationARB(_shaderProgramId, "bgl_RenderTexture"), 0);
-            if (this.mc.gameSettings.useSupersample)
+            if ( superSampleSupported && this.mc.gameSettings.useSupersample)
             {
                 ARBShaderObjects.glUniform1iARB(ARBShaderObjects.glGetUniformLocationARB(_shaderProgramId, "half_screenWidth"), (int)ceil(((float)this.mc.displayWidth * this.mc.gameSettings.superSampleScaleFactor) / 2.0f));
             }
@@ -1298,7 +1281,7 @@ public class Renderer extends EntityRenderer
             mc.checkGLError("After distortion");
         }
 
-        if (this.mc.gameSettings.useSupersample)
+        if (superSampleSupported && this.mc.gameSettings.useSupersample)
         {
             // Now switch to 1st pass target framebuffer
             GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, _Lanczos_GUIframeBufferId2);
@@ -1620,9 +1603,6 @@ public class Renderer extends EntityRenderer
         try {
             vertShader = createShader(vertexShaderGLSL, ARBVertexShader.GL_VERTEX_SHADER_ARB);
             pixelShader = createShader(fragmentShaderGLSL, ARBFragmentShader.GL_FRAGMENT_SHADER_ARB);
-
-            //vertShader = createShader("oculusDistortion.vert", ARBVertexShader.GL_VERTEX_SHADER_ARB);
-            //pixelShader = createShader("oculusDistortion2.frag", ARBFragmentShader.GL_FRAGMENT_SHADER_ARB);
         }
         catch(Exception exc) {
             exc.printStackTrace();
@@ -1789,12 +1769,6 @@ public class Renderer extends EntityRenderer
         "    gl_FragColor = color;\n" +
         "}\n";
 
-//    GL20.glBindAttribLocation(_Lanczos_shaderProgramId, 0, "in_Position");
-//    // Color information will be attribute 1
-//    GL20.glBindAttribLocation(_Lanczos_shaderProgramId, 1, "in_Color");
-//    // Texture information will be attribute 2
-//    GL20.glBindAttribLocation(_Lanczos_shaderProgramId, 2, "in_TextureCoord");
-
     public final String LANCZOS_SAMPLER_VERTEX_SHADER =
         "#version 120\n" +
         "\n" +
@@ -1956,7 +1930,6 @@ public class Renderer extends EntityRenderer
                 return 0;
 
             ARBShaderObjects.glShaderSourceARB(shader, shaderGLSL);
-            //ARBShaderObjects.glShaderSourceARB(shader, readFileAsString(filename));
             ARBShaderObjects.glCompileShaderARB(shader);
 
             if (ARBShaderObjects.glGetObjectParameteriARB(shader, ARBShaderObjects.GL_OBJECT_COMPILE_STATUS_ARB) == GL11.GL_FALSE)
@@ -2092,7 +2065,7 @@ public class Renderer extends EntityRenderer
     /**
      * Setup orthogonal projection for rendering GUI screen overlays
      */
-    public void setupOverlayRendering(int width, int height, float scaleFactor, OculusRift oculusRift, EyeRenderParams eyeRenderParams, EntityLiving entity, float renderPartialTicks, int renderSceneNumber)
+    public void setupOverlayRendering(int width, int height, float scaleFactor, IOculusRift oculusRift, EyeRenderParams eyeRenderParams, EntityLiving entity, float renderPartialTicks, int renderSceneNumber)
     {
         // TODO: Setup 3D GUI
 
@@ -2130,7 +2103,7 @@ public class Renderer extends EntityRenderer
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glLoadIdentity();
 
-        this.prevCamRoll = this.camRoll;// = oculusRift.getRollDegrees_LH();
+        this.prevCamRoll = this.camRoll;
         float roll = this.camRoll;
         float pitch = entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks;
         float yaw = (entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks) - entity.renderYawOffset;

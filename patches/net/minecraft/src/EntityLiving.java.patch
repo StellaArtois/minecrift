@@ -1,0 +1,45 @@
+--- a/net/minecraft/src/EntityLiving.java
++++ b/net/minecraft/src/EntityLiving.java
+@@ -7,6 +7,8 @@
+ import java.util.List;
+ import java.util.Random;
+ 
++import net.minecraft.client.Minecraft;
++
+ public abstract class EntityLiving extends Entity
+ {
+     /**
+@@ -2286,17 +2288,31 @@
+      */
+     public Vec3 getPosition(float par1)
+     {
++    	Vec3 position;
+         if (par1 == 1.0F)
+         {
+-            return this.worldObj.getWorldVec3Pool().getVecFromPool(this.posX, this.posY, this.posZ);
++            position= this.worldObj.getWorldVec3Pool().getVecFromPool(this.posX, this.posY, this.posZ);
+         }
+         else
+         {
+             double var2 = this.prevPosX + (this.posX - this.prevPosX) * (double)par1;
+             double var4 = this.prevPosY + (this.posY - this.prevPosY) * (double)par1;
+             double var6 = this.prevPosZ + (this.posZ - this.prevPosZ) * (double)par1;
+-            return this.worldObj.getWorldVec3Pool().getVecFromPool(var2, var4, var6);
++            position = this.worldObj.getWorldVec3Pool().getVecFromPool(var2, var4, var6);
++        }
++
++        GameSettings settings = Minecraft.getMinecraft().gameSettings;
++        if( settings.useVR )
++        {
++        	//Account for neck-model
++        	Vec3 neck = position.myVec3LocalPool.getVecFromPool(0, settings.neckBaseToEyeHeight,settings.eyeProtrusion );
++            neck.rotateAroundX(-this.rotationPitch * (float)Math.PI / 180.0F);
++            neck.rotateAroundY(-this.rotationYaw * (float)Math.PI / 180.0F);
++            neck.rotateAroundZ(-this.rotationRoll * (float)Math.PI / 180.0F);
++        	position = position.addVector(neck.xCoord, neck.yCoord, neck.zCoord);
++        	
+         }
++        return position;
+     }
+ 
+     /**

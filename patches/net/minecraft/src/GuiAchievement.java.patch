@@ -4,7 +4,7 @@
  package net.minecraft.src;
  
 +import de.fruitfly.ovr.EyeRenderParams;
-+import de.fruitfly.ovr.OculusRift;
++import de.fruitfly.ovr.IOculusRift;
  import net.minecraft.client.Minecraft;
  import org.lwjgl.opengl.GL11;
  import org.lwjgl.opengl.GL12;
@@ -27,7 +27,7 @@
       * Update the display of the achievement window to match the game window.
       */
 -    private void updateAchievementWindowScale()
-+    private void updateAchievementWindowScale(OculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
++    private void updateAchievementWindowScale(IOculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
      {
 -        GL11.glViewport(0, 0, this.theGame.displayWidth, this.theGame.displayHeight);
 +        float scale = 1.0f;
@@ -103,7 +103,7 @@
 +
 +        // TODO: The below transform must be done - however GL_PROJECTION and GL_MODELVIEW
 +        // TODO: state must be pushed / popped between this and the rest of the in-game GUI
-+        if (oculusRift.use)
++        if (theGame.gameSettings.useVR)
 +        {
 +            // TODO: Determine position
 +            GL11.glTranslatef(0.0F, 0.0F, -2000.0F);
@@ -124,7 +124,7 @@
       * Updates the small achievement tooltip window, showing a queued achievement if is needed.
       */
 -    public void updateAchievementWindow()
-+    public void updateAchievementWindow(OculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
++    public void updateAchievementWindow(IOculusRift oculusRift, EyeRenderParams eyeRenderParams, int renderSceneNumber)
      {
 +        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
 +        GL11.glMatrixMode(GL11.GL_PROJECTION);

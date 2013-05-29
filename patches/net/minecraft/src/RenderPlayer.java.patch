@@ -1,23 +1,30 @@
 --- a/net/minecraft/src/RenderPlayer.java
 +++ b/net/minecraft/src/RenderPlayer.java
-@@ -17,6 +17,20 @@
+@@ -7,6 +7,7 @@
+     private ModelBiped modelBipedMain;
+     private ModelBiped modelArmorChestplate;
+     private ModelBiped modelArmor;
++    private double vrOffset;
+     private static final String[] armorFilenamePrefix = new String[] {"cloth", "chain", "iron", "diamond", "gold"};
+ 
+     public RenderPlayer()
+@@ -17,6 +18,13 @@
          this.modelArmor = new ModelBiped(0.5F);
      }
  
-+    public void setRenderHead(boolean render)
-+    {
-+        this.modelBipedMain._renderHead = render;
-+        this.modelArmorChestplate._renderHead = render;
-+        this.modelArmor._renderHead = render;
-+    }
-+
-+    public void setRenderHeadWear(boolean render)
-+    {
-+        this.modelBipedMain._renderHeadWear = render;
-+        this.modelArmorChestplate._renderHeadWear = render;
-+        this.modelArmor._renderHeadWear = render;
-+    }
++	public void setVR(boolean vrMode, boolean renderHeadWear) {
++		
++		this.modelBipedMain.vrOffset = this.modelArmorChestplate.vrOffset = this.modelArmor.vrOffset = vrMode ? 0.25F : 0.0F;
++        this.modelBipedMain._renderHead = this.modelArmorChestplate._renderHead = this.modelArmor._renderHead = !vrMode;
++        this.modelBipedMain._renderHeadWear = this.modelArmorChestplate._renderHeadWear = this.modelArmor._renderHeadWear = renderHeadWear;
++	}
 +
      protected void func_98191_a(EntityPlayer par1EntityPlayer)
      {
          this.loadDownloadableImageTexture(par1EntityPlayer.skinUrl, par1EntityPlayer.getTexture());
+@@ -504,4 +512,5 @@
+     {
+         this.renderPlayer((EntityPlayer)par1Entity, par2, par4, par6, par8, par9);
+     }
++
+ }

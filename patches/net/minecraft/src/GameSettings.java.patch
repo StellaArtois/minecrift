@@ -1,6 +1,6 @@
 --- a/net/minecraft/src/GameSettings.java
 +++ b/net/minecraft/src/GameSettings.java
-@@ -28,6 +28,7 @@
+@@ -28,10 +28,13 @@
      public float musicVolume = 1.0F;
      public float soundVolume = 1.0F;
      public float mouseSensitivity = 0.5F;
@@ -8,11 +8,20 @@
      public boolean invertMouse = false;
      public int renderDistance = 0;
      public boolean viewBobbing = true;
-@@ -133,6 +134,30 @@
+     public boolean anaglyph = false;
++    public boolean useVR    = true;
++    public String vrImplementation = "de.fruitfly.ovr.OculusRift";
+ 
+     /** Advanced OpenGL */
+     public boolean advancedOpengl = false;
+@@ -133,6 +136,33 @@
      public boolean enableVsync = true;
      public boolean hideServerAddress = false;
  
 +    // TODO: Additional Oculus stuff
++	public float playerHeight = 1.74f;
++	public float eyeProtrusion = 0.185f;
++	public float neckBaseToEyeHeight = 0.225f;
 +    public boolean useDistortion = true;
 +    public boolean useHeadTracking = true;
 +    public boolean useHeadTrackPrediction = true;
@@ -39,7 +48,7 @@
      /**
       * Whether to show advanced information on item tooltips, toggled by F3+H
       */
-@@ -175,6 +200,7 @@
+@@ -175,6 +205,7 @@
      /** true if debug info should be displayed instead of version */
      public boolean showDebugInfo;
      public boolean showDebugProfilerChart;
@@ -47,7 +56,7 @@
  
      /** The lastServer string. */
      public String lastServer;
-@@ -204,6 +230,7 @@
+@@ -204,6 +235,7 @@
      public String language;
      private File optionsFileOF;
  
@@ -55,7 +64,7 @@
      public GameSettings(Minecraft par1Minecraft, File par2File)
      {
          this.renderDistance = 1;
-@@ -211,7 +238,7 @@
+@@ -211,7 +243,7 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
@@ -64,7 +73,7 @@
          this.thirdPersonView = 0;
          this.showDebugInfo = false;
          this.showDebugProfilerChart = false;
-@@ -240,7 +267,7 @@
+@@ -240,7 +272,7 @@
          this.ofKeyBindZoom = new KeyBinding("Zoom", 29);
          this.keyBindings = new KeyBinding[] {this.keyBindAttack, this.keyBindUseItem, this.keyBindForward, this.keyBindLeft, this.keyBindBack, this.keyBindRight, this.keyBindJump, this.keyBindSneak, this.keyBindDrop, this.keyBindInventory, this.keyBindChat, this.keyBindPlayerList, this.keyBindPickBlock, this.ofKeyBindZoom, this.keyBindCommand};
          this.difficulty = 2;
@@ -73,14 +82,39 @@
          this.thirdPersonView = 0;
          this.showDebugInfo = false;
          this.showDebugProfilerChart = false;
-@@ -1677,6 +1704,73 @@
+@@ -1677,6 +1709,98 @@
                          this.mouseSensitivity = this.parseFloat(var3[1]);
                      }
  
 +                    // TODO: Load oculus settings
++                    if (var3[0].equals("useVR"))
++                    {
++                        this.useVR = var3[1].equals("true");
++                    }
++
++                    if (var3[0].equals("playerHeight"))
++                    {
++                        this.playerHeight = this.parseFloat(var3[1]);
++                    }
++
++                    if (var3[0].equals("neckBaseToEyeHeight"))
++                    {
++                        this.neckBaseToEyeHeight = this.parseFloat(var3[1]);
++                    }
++
++                    if (var3[0].equals("eyeProtrusion"))
++                    {
++                        this.eyeProtrusion = this.parseFloat(var3[1]);
++                    }
++
 +                    if (var3[0].equals("ipd"))
 +                    {
 +                        this.ipd = this.parseFloat(var3[1]);
++                    }
++
++                    if (var3[0].equals("vrImplementation"))
++                    {
++                        this.vrImplementation = var3[1];
 +                    }
 +
 +                    if (var3[0].equals("hudOpacity"))
@@ -147,12 +181,18 @@
                      if (var3[0].equals("fov"))
                      {
                          this.fovSetting = this.parseFloat(var3[1]);
-@@ -2365,6 +2459,21 @@
+@@ -2365,6 +2489,27 @@
              var5.println("difficulty:" + this.difficulty);
              var5.println("fancyGraphics:" + this.fancyGraphics);
              var5.println("ao:" + this.ambientOcclusion);
 +
-+            var5.println("ipd:" + this.ipd); // TODO: Save oculus settings
++            // TODO: Save oculus settings
++            var5.println("useVR:"+ this.useVR );
++            var5.println("playerHeight:" + this.playerHeight );
++            var5.println("eyeProtrusion:" + this.eyeProtrusion );
++            var5.println("neckBaseToEyeHeight:" + this.neckBaseToEyeHeight );
++            var5.println("vrImplmentation:"+ this.vrImplementation );
++            var5.println("ipd:" + this.ipd);
 +            var5.println("hudOpacity:" + this.useHudOpacity);
 +            var5.println("useHeadTrackPrediction:" + this.useHeadTrackPrediction);
 +            var5.println("renderHeadWear:" + this.renderHeadWear);

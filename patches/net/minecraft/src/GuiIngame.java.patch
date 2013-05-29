@@ -1,22 +1,19 @@
 --- a/net/minecraft/src/GuiIngame.java
 +++ b/net/minecraft/src/GuiIngame.java
-@@ -5,9 +5,13 @@
+@@ -5,9 +5,10 @@
  import java.util.Iterator;
  import java.util.List;
  import java.util.Random;
 +
-+import de.fruitfly.ovr.EyeRenderParams;
-+import de.fruitfly.ovr.OculusRift;
++import de.fruitfly.ovr.IOculusRift;
  import net.minecraft.client.Minecraft;
 -import org.lwjgl.opengl.GL11;
 -import org.lwjgl.opengl.GL12;
 +import org.lwjgl.opengl.*;
-+
-+import static java.lang.Math.ceil;
  
  public class GuiIngame extends Gui
  {
-@@ -44,47 +48,50 @@
+@@ -44,47 +45,50 @@
      /**
       * Render the ingame overlay with quick icon bar, ...
       */
@@ -27,7 +24,7 @@
 +    	//TODO: actually call it.
 +   
 +    }
-+    public void renderGameOverlay(float renderPartialTicks, OculusRift oculusRift,
++    public void renderGameOverlay(float renderPartialTicks, IOculusRift oculusRift,
 +                                  int displayWidth, int displayHeight, float renderScale, int renderWidth, int renderHeight, float scaleFactor, int scaledWidth, int scaledHeight, int mouseX, int mouseY, int scaledMouseX, int scaledMouseY)
      {
 -        ScaledResolution var5 = new ScaledResolution(this.mc.gameSettings, this.mc.displayWidth, this.mc.displayHeight);
@@ -86,7 +83,7 @@
          int var20;
          int var23;
          int var22;
-@@ -96,40 +103,49 @@
+@@ -96,40 +100,54 @@
  
          if (!this.mc.playerController.enableEverythingIsScrewedUpMode())
          {
@@ -106,15 +103,20 @@
 +            this.mc.mcProfiler.endStartSection("load GUI textures");
              this.mc.renderEngine.bindTexture("/gui/icons.png");
 +
++            if( false )
++            {
 +            this.mc.mcProfiler.endStartSection("crosshair");
              GL11.glEnable(GL11.GL_BLEND);
 -            GL11.glBlendFunc(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
 -            this.drawTexturedModalRect(var6 / 2 - 7, var7 / 2 - 7, 0, 0, 16, 16);
 +            //GL14.glBlendFuncSeparate(GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR, GL11.GL_ONE_MINUS_DST_COLOR, GL11.GL_ONE_MINUS_SRC_COLOR);
 +            GL11.glBlendFunc(GL11.GL_ONE/*_MINUS_DST_COLOR*/, GL11.GL_ONE_MINUS_DST_ALPHA/*_MINUS_SRC_COLOR*/);
++            zLevel = -1000.0F;
 +            this.drawTexturedModalRect(((double)scaledWidth / (double)2) - (double)7, ((double)scaledHeight / (double)2) - (double)7, 0, 0, 16, 16, 1.0f);
++            zLevel = -90.0F;
              GL11.glDisable(GL11.GL_BLEND);
 -            var11 = this.mc.thePlayer.hurtResistantTime / 3 % 2 == 1;
++            }
 +
 +            isHurtResistant = this.mc.thePlayer.hurtResistantTime / 3 % 2 == 1;
  
@@ -142,7 +144,8 @@
              this.mc.mcProfiler.endSection();
              int var19;
  
-             if (this.mc.playerController.shouldDrawHUD())
+-            if (this.mc.playerController.shouldDrawHUD())
++            if ( this.mc.playerController.shouldDrawHUD())
              {
 -                var18 = var6 / 2 - 91;
 -                var19 = var6 / 2 + 91;
@@ -151,7 +154,7 @@
                  this.mc.mcProfiler.startSection("expBar");
                  var20 = this.mc.thePlayer.xpBarCap();
  
-@@ -137,16 +153,16 @@
+@@ -137,16 +155,16 @@
                  {
                      short var21 = 182;
                      var22 = (int)(this.mc.thePlayer.experience * (float)(var21 + 1));
@@ -172,7 +175,7 @@
                  var22 = var47 - 10;
                  var23 = this.mc.thePlayer.getTotalArmorValue();
                  var24 = -1;
-@@ -165,7 +181,7 @@
+@@ -165,7 +183,7 @@
                  {
                      if (var23 > 0)
                      {
@@ -181,7 +184,7 @@
  
                          if (var25 * 2 + 1 < var23)
                          {
-@@ -196,15 +212,15 @@
+@@ -196,15 +214,15 @@
  
                      var27 = 0;
  
@@ -200,7 +203,7 @@
                      {
                          var29 = var47 + this.rand.nextInt(2);
                      }
-@@ -223,25 +239,25 @@
+@@ -223,25 +241,25 @@
  
                      this.drawTexturedModalRect(var28, var29, 16 + var27 * 9, 9 * var30, 9, 9);
  
@@ -231,7 +234,7 @@
                      {
                          this.drawTexturedModalRect(var28, var29, var26 + 45, 9 * var30, 9, 9);
                      }
-@@ -261,7 +277,7 @@
+@@ -261,7 +279,7 @@
                          var51 = 13;
                      }
  
@@ -240,7 +243,7 @@
                      {
                          var26 = var47 + (this.rand.nextInt(3) - 1);
                      }
-@@ -276,23 +292,23 @@
+@@ -276,23 +294,23 @@
  
                      if (var14)
                      {
@@ -268,7 +271,7 @@
                      {
                          this.drawTexturedModalRect(var29, var26, var50 + 45, 27, 9, 9);
                      }
-@@ -327,11 +343,11 @@
+@@ -327,11 +345,11 @@
              GL11.glEnable(GL12.GL_RESCALE_NORMAL);
              RenderHelper.enableGUIStandardItemLighting();
  
@@ -284,7 +287,7 @@
              }
  
              RenderHelper.disableStandardItemLighting();
-@@ -354,8 +370,8 @@
+@@ -354,8 +372,8 @@
                  var33 = 1.0F - (float)(var32 - 100) / 10.0F;
              }
  
@@ -295,7 +298,7 @@
              GL11.glEnable(GL11.GL_ALPHA_TEST);
              GL11.glEnable(GL11.GL_DEPTH_TEST);
              this.mc.mcProfiler.endSection();
-@@ -367,16 +383,16 @@
+@@ -367,16 +385,16 @@
          if (this.mc.playerController.func_78763_f() && this.mc.thePlayer.experienceLevel > 0)
          {
              this.mc.mcProfiler.startSection("expLevel");
@@ -321,7 +324,7 @@
              this.mc.mcProfiler.endSection();
          }
  
-@@ -389,12 +405,12 @@
+@@ -389,12 +407,12 @@
              if (this.remainingHighlightTicks > 0 && this.highlightingItemStack != null)
              {
                  var35 = this.highlightingItemStack.getDisplayName();
@@ -337,7 +340,7 @@
                  }
  
                  var38 = (int)((float)this.remainingHighlightTicks * 256.0F / 10.0F);
-@@ -409,7 +425,7 @@
+@@ -409,7 +427,7 @@
                      GL11.glPushMatrix();
                      GL11.glEnable(GL11.GL_BLEND);
                      GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -346,7 +349,7 @@
                      GL11.glDisable(GL11.GL_BLEND);
                      GL11.glPopMatrix();
                  }
-@@ -432,44 +448,98 @@
+@@ -432,44 +450,98 @@
                  var35 = String.format(StatCollector.translateToLocal("demo.remainingTime"), new Object[] {StringUtils.ticksToElapsedTime((int)(120500L - this.mc.theWorld.getTotalWorldTime()))});
              }
  
@@ -441,9 +444,9 @@
 +                String fsaa = this.mc.gameSettings.useSupersample == true ? "ON" : "OFF";
 +                String fsaaScale = String.format("%.2f", new Object[] {Float.valueOf(this.mc.gameSettings.superSampleScaleFactor)});
 +
-+                this.drawString(fontRenderer, String.format("OCULUS RIFT DK1: %s [Ctrl O to reinit]", new Object[] {String.valueOf(oculusRift._initSummary)}), 2, nBaseHeight + 0, 14737632);
++                this.drawString(fontRenderer, String.format("OCULUS RIFT DK1: %s [Ctrl O to reinit]", new Object[] {String.valueOf(oculusRift.getInitializationStatus())}), 2, nBaseHeight + 0, 14737632);
 +                this.drawString(fontRenderer, "Headtracking: " + headTrackStatus + " [Ctrl-L], Prediction: " + useHeadTrackPrediction + " [Ctrl-Alt-L]", 2, nBaseHeight + 10, 14737632);
-+                this.drawString(fontRenderer, String.format("    Raw:       [Yaw: %.3f, Pitch: %.3f, Roll: %.3f]", new Object[] {Float.valueOf(oculusRift.rawYaw), Float.valueOf(oculusRift.rawPitch), Float.valueOf(oculusRift.rawRoll)}), 2, nBaseHeight + 20, 14737632);
++                //this.drawString(fontRenderer, String.format("    Raw:       [Yaw: %.3f, Pitch: %.3f, Roll: %.3f]", new Object[] {Float.valueOf(oculusRift.rawYaw), Float.valueOf(oculusRift.rawPitch), Float.valueOf(oculusRift.rawRoll)}), 2, nBaseHeight + 20, 14737632);
 +                this.drawString(fontRenderer, String.format("    Degrees: [Yaw: %.3f, Pitch: %.3f, Roll: %.3f]", new Object[] {Float.valueOf(oculusRift.getYawDegrees_LH()), Float.valueOf(oculusRift.getPitchDegrees_LH()), Float.valueOf(oculusRift.getRollDegrees_LH())}), 2, nBaseHeight + 30, 14737632);
 +                this.drawString(fontRenderer, String.format("IPD=%.1fmm [Ctrl (Alt) -/=]", new Object[] {Float.valueOf(oculusRift.getIPD() * 1000)}), 2, nBaseHeight + 40, 14737632);
 +                this.drawString(fontRenderer, "Distortion=" + distortionStatus + " [Ctrl P], Chrom. Ab. Correction=" + chromaticAberrationCorrectionStatus + " [Ctrl-Alt P]", 2, nBaseHeight + 50, 14737632);
@@ -473,7 +476,7 @@
              GL11.glPopMatrix();
              this.mc.mcProfiler.endSection();
          }
-@@ -477,32 +547,33 @@
+@@ -477,32 +549,33 @@
          if (this.recordPlayingUpFor > 0)
          {
              this.mc.mcProfiler.startSection("overlayMessage");
@@ -516,7 +519,7 @@
              this.mc.mcProfiler.endSection();
          }
  
-@@ -510,14 +581,14 @@
+@@ -510,14 +583,14 @@
  
          if (var42 != null)
          {
@@ -533,7 +536,7 @@
          this.mc.mcProfiler.startSection("chat");
          this.persistantChatGUI.drawChat(this.updateCounter);
          this.mc.mcProfiler.endSection();
-@@ -532,27 +603,27 @@
+@@ -532,27 +605,27 @@
              var38 = var39.currentServerMaxPlayers;
              var37 = var38;
  
@@ -571,7 +574,7 @@
                  GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
                  GL11.glEnable(GL11.GL_ALPHA_TEST);
  
-@@ -561,18 +632,18 @@
+@@ -561,18 +634,18 @@
                      GuiPlayerInfo var49 = (GuiPlayerInfo)var41.get(var20);
                      ScorePlayerTeam var48 = this.mc.theWorld.getScoreboard().getPlayersTeam(var49.name);
                      String var53 = ScorePlayerTeam.func_96667_a(var48, var49.name);
@@ -594,7 +597,7 @@
                          }
                      }
  
-@@ -607,7 +678,7 @@
+@@ -607,7 +680,7 @@
                      }
  
                      this.zLevel += 100.0F;
@@ -603,7 +606,7 @@
                      this.zLevel -= 100.0F;
                  }
              }
-@@ -669,13 +740,13 @@
+@@ -669,13 +742,13 @@
      /**
       * Renders dragon's (boss) health on the HUD
       */
