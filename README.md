@@ -51,31 +51,58 @@ patially in place, but not copmleted.  BACK UP your original minecraft.jar
 before installing this mod. I make no claims as to the compatibility of this
 mod with other mods other than Optifine!
 
+---
+
 Installation
 ------------
 
-REQUIRES Minecraft 1.5.2 With Optifine HD D2 or D3. 
+REQUIRES Minecraft 1.5.2 With [Optifine HD D2 or
+D3](http://www.minecraftforum.net/topic/249637-152-optifine-hd-d3-fps-boost-hd-textures-aa-af-and-much-more/)
+
+Magic Launcher
+--------------
+The recommended way to install Minecrift is use the [magic
+launcher](http://www.minecraftforum.net/topic/939149-launcher-magic-launcher-114-mods-options-profiles-news/),
+which is available for Windows, OSX, and Linux.
+
+- Download Optifine HD D3, but don't extract.
+- Extract the minecrift\_0\_26.zip
+- Open the Magic Launcher.
+- Click the 'Setup' configuration button.
+- Create a new Configuration and call it "minecrift" (or whatever you prefer)
+- Add these zips, in order:
+  - OptiFine\_1.5.2\_HD\_U\_D3.zip 
+  - JRift.jar 
+  - minecrift\_0\_26\_classes.zip 
+- Magic Launcher will complain about 3 errors in minecrift, but this is a false positive.
+- Click 'Test' to make sure it works.
+- When satisfied, click 'OK' to Save the configuration.
+- From now on, just start Magic Launcher and use the "minecrift" configuration to play!
+
+Manual
+------
+
+It is possible to install Minecrift without using the Magic launcher, but this
+way hasn't been tested as well. Use the steps below according to your operating
+system.
 
 Windows
 -------
 
 Minecrift for Windows requires Vista or above and a graphics card & driver capable of at least OpenGL 3.3 support.
 
-- Change directory to %APPDATA%\.minecraft\bin
+- Download [Optifine HD D3](http://www.minecraftforum.net/topic/249637-152-optifine-hd-d3-fps-boost-hd-textures-aa-af-and-much-more/)
+- Change directory to %APPDATA%\\.minecraft\bin
 - Open your minecraft.jar file using 7-zip, winzip etc. 
-- Select all, and drag and drop in the entire contents of the /minecraft
-  directory from the Minecrift zip into the jar archive (but not the /minecraft
-  directory itself).
+- Select all, and drag and drop in the *entire contents* of the
+  OptiFine\_1.5.2\_HD\_U\_D3.zip into the minecraft.jar.
+- Select all, and drag and drop in the *entire contents* of the
+  /minecrift\_0\_26\_classes.zip (but not the zip itself) from the Minecrift
+  zip into the minecraft.jar archive.
 - Make sure to delete the META-INF folder in minecraft.jar. Close 7zip /
   winzip.
-- Copy JRiftLibrary.dll and JRiftLibrary64.dll into <Path to
-  %APPDATA%>\.minecraft\bin\natives
-- *VERY IMPORTANT* Go to the My Computer icon, right click, select properties.
-  Go to advanced system settings, Environment variables. Edit the *system* path
-  to add the directory <Path to %APPDATA%>\\.minecraft\bin\natives, so that the
-  JRiftLibrary dlls can be found. If you don't do this, Minecraft will just
-  show a black screen on startup!
-- *AS IMPORTANT*. Install the Microsoft VS2012 C++ redists (both x86
+- Copy JRift.jar into<Path to %APPDATA%>\\.minecraft\bin
+- *IMPORTANT*. Install the Microsoft VS2012 C++ redists (both x86
   and x64) from
   [here](http://www.microsoft.com/visualstudio/11/en-us/downloads/vc-redist#vc-redist)
 - Run up Minecraft and off you go. If you get a black screen on login, trying
@@ -87,6 +114,14 @@ This should allow any exceptions or errors on Minecraft startup to show up in th
 MacOS
 -----
 
+Follow the same steps for Windows, but use ~/Library/Application
+Support/minecraft instead of <Path to %APPDATA%>\\.minecraft.
+- The VS2012 C++ redistributable is not required.
+
+Linux
+-----
+
+Follow the same steps for Windows, but use ~/.minecraft/ instead of %APPDATA%\\.minecraft.
 
 Controls
 --------
@@ -130,6 +165,8 @@ Known Issues
 
 There are (not so) many.
 
+- FSAA (Super Sampling) doens't work on OSX and is disabled.
+- Linux doesn't support Oculus Rift head tracker (yet).
 - The GUI is on it's way to being 3D. It's still going to be a little rough
   around the edges however, and is in prototype stage.
 - The crosshair isn't exactly pair to the eyes and can move slightly off the
