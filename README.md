@@ -5,7 +5,6 @@ Current Version: 0.26 alpha
 
 StellaArtois, mabrowning 2013
 
-
 With thanks to:
 
 - Palmer Luckey and his team for creating the Oculus Rift. The future is
@@ -155,6 +154,8 @@ Roadmap
 Release Notes
 =============
 
+The changelist can be seen [here](CHANGES.md)
+
 Known Issues:
 -------------
 
@@ -162,6 +163,7 @@ Known Issues:
 - Sometimes an in-game menu will not appear until another menu has been opened and closed first.
 - A settings menu GUI is needed for all the Minecrift settings!
 
+----
 
 Building
 ========

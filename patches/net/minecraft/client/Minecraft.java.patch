@@ -164,7 +164,7 @@
 +        {
 +        	
 +            try {
-+            	if( gameSettings.vrImplementation == "de.fruitfly.ovr.OculusRift")
++            	if( gameSettings.vrImplementation.equals("de.fruitfly.ovr.OculusRift"))
 +            	{
 +            		OculusRift.LoadLibrary(new File(new File(getMinecraftDir(),"bin"),"natives"));
 +            	}

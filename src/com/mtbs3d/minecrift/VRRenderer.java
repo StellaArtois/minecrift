@@ -270,13 +270,6 @@ public class VRRenderer extends EntityRenderer
                 GL11.glRotatef(thirdPersonPitch - entity.rotationPitch, 1.0F, 0.0F, 0.0F);
             }
         }
-        else
-        {
-        	//First person, offset camera backwards
-        	GL11.glTranslatef(0.0f, 00.15f, -0.15f);
-        	
-        }
-        
 
         if (!this.mc.gameSettings.debugCamEnable)
         {
@@ -287,17 +280,19 @@ public class VRRenderer extends EntityRenderer
             {
                 // Use direct values
                 GL11.glRotatef(entity.rotationPitch, 1.0F, 0.0F, 0.0F);
+                GL11.glTranslatef(0f, 0f, -0.15f);
                 GL11.glRotatef(entity.rotationYaw + 180.0F, 0.0F, 1.0F, 0.0F);
             }
             else
             {
                 GL11.glRotatef(entity.prevRotationPitch + (entity.rotationPitch - entity.prevRotationPitch) * renderPartialTicks, 1.0F, 0.0F, 0.0F);
+                GL11.glTranslatef(0f, 0f, -0.15f);
                 GL11.glRotatef(entity.prevRotationYaw + (entity.rotationYaw - entity.prevRotationYaw) * renderPartialTicks + 180.0F, 0.0F, 1.0F, 0.0F);
             }
         }
 
 
-        GL11.glTranslatef(0.0F, cameraYOffset, 0.0F);
+        GL11.glTranslatef(0.0F, cameraYOffset,  0.00F);
 
         if (this.debugViewDirection > 0)
         {
