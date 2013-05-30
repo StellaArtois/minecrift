@@ -3,6 +3,7 @@ import urllib, zipfile
 import shutil, tempfile
 from hashlib import md5  # pylint: disable-msg=E0611
 from optparse import OptionParser
+import subprocess
 
 from applychanges import applychanges
 
@@ -100,7 +101,10 @@ def symlink(source, link_name):
     import os
     os_symlink = getattr(os, "symlink", None)
     if callable(os_symlink):
-        os_symlink(source, link_name)
+        try:
+            os_symlink(source, link_name)
+        except Exception:
+			pass
     else:
         import ctypes
         csl = ctypes.windll.kernel32.CreateSymbolicLinkW
@@ -123,20 +127,21 @@ def main(mcp_dir):
     os.chdir(mcp_dir)
     from runtime.decompile import decompile
     #         Conf  JAD    CSV    -r     -d     -a     -n     -p     -o     -l     -g     -c     -s
-    decompile(None, False, False, False, False, False, False, False, False, False, False, True, False )
+    #decompile(None, False, False, False, False, False, False, False, False, False, False, True, False )
 
     os.chdir( base_dir )
 
     src_dir = os.path.join(mcp_dir, "src","minecraft")
     org_src_dir = os.path.join(mcp_dir, "src",".minecraft_orig")
-    if os.path.exists( org_src_dir ):
-        shutil.rmtree( org_src_dir, True )
-    shutil.copytree( src_dir, org_src_dir )
+    #if os.path.exists( org_src_dir ):
+    #    shutil.rmtree( org_src_dir, True )
+    #shutil.copytree( src_dir, org_src_dir )
 
-    applychanges( mcp_dir )
+    #applychanges( mcp_dir )
     
-    #TODO: git submodules init
-    symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ) )
+    process = subprocess.Popen(["git","submodule","update"], cwd=base_dir, bufsize=-1)
+    process.communicate()
+    symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ,"JRift.jar") )
 
     
 if __name__ == '__main__':
