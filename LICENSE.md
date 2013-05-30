@@ -6,8 +6,8 @@ The original Minecraft source (not included here), is Copyright 2013 Mojang
 AB. They retain exclusive rights to their code, but have been generally
 supportive of the modding community and have permitted patches of their source
 code to be redistributed. Using the code in patches/ does not grant you a
-license to Minecraft itself; instead, its use is contingent upon a license from
-Mojang for Minecraft itself. (Buy the game!)
+license to Minecraft; instead, its use is contingent upon a license from Mojang
+for Minecraft itself. (Buy the game!)
 
 The Minecraft Coder Pack (MCP) is not redistributed here, and remains
 copyright the MCP team (see http://mcp.ocean-labs.de/index.php/MCP_Releases

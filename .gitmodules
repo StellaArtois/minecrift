@@ -1,0 +1,3 @@
+[submodule "JRift"]
+	path = JRift
+	url = https://github.com/mabrowning/JRift

@@ -96,6 +96,20 @@ def zipmerge( target_file, source_file ):
     os.remove( target_file )
     shutil.move( out_filename, target_file )
     
+def symlink(source, link_name):
+    import os
+    os_symlink = getattr(os, "symlink", None)
+    if callable(os_symlink):
+        os_symlink(source, link_name)
+    else:
+        import ctypes
+        csl = ctypes.windll.kernel32.CreateSymbolicLinkW
+        csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
+        csl.restype = ctypes.c_ubyte
+        flags = 1 if os.path.isdir(source) else 0
+        if csl(link_name, source, flags) == 0:
+            raise ctypes.WinError()
+
 def main(mcp_dir):
     print("Downloading dependencies...")
     download_deps( mcp_dir )
@@ -120,6 +134,9 @@ def main(mcp_dir):
     shutil.copytree( src_dir, org_src_dir )
 
     applychanges( mcp_dir )
+    
+    #TODO: git submodules init
+    symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ) )
 
     
 if __name__ == '__main__':
