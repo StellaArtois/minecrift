@@ -191,7 +191,7 @@
 +            var5.println("playerHeight:" + this.playerHeight );
 +            var5.println("eyeProtrusion:" + this.eyeProtrusion );
 +            var5.println("neckBaseToEyeHeight:" + this.neckBaseToEyeHeight );
-+            var5.println("vrImplmentation:"+ this.vrImplementation );
++            var5.println("vrImplementation:"+ this.vrImplementation );
 +            var5.println("ipd:" + this.ipd);
 +            var5.println("hudOpacity:" + this.useHudOpacity);
 +            var5.println("useHeadTrackPrediction:" + this.useHeadTrackPrediction);

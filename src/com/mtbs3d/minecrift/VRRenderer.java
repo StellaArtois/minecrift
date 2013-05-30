@@ -66,9 +66,6 @@ public class VRRenderer extends EntityRenderer
 	private double renderViewEntityZ;
     
     boolean superSampleSupported;
-	private float pointX;
-	private float pointZ;
-	private float pointY;
 
     public VRRenderer(Minecraft par1Minecraft, IOculusRift rift, GuiAchievement guiAchiv )
     {
@@ -273,6 +270,12 @@ public class VRRenderer extends EntityRenderer
                 GL11.glRotatef(thirdPersonPitch - entity.rotationPitch, 1.0F, 0.0F, 0.0F);
             }
         }
+        else
+        {
+        	//First person, offset camera backwards
+        	GL11.glTranslatef(0.0f, 00.15f, -0.15f);
+        	
+        }
         
 
         if (!this.mc.gameSettings.debugCamEnable)
@@ -392,7 +395,6 @@ public class VRRenderer extends EntityRenderer
                 {
                     this.mc.thePlayer.setAnglesAbsolute(oculusYaw, oculusPitch, roll);
                     this.camRoll = roll;
-                    //System.out.println(String.format("Set angles: %.2f, %.2f, %.2f", new Object[] {Float.valueOf(oculusYaw), Float.valueOf(oculusRift.getPitch()), Float.valueOf(oculusRift.getRoll())}));
                 }
             }
             this.mc.mcProfiler.endSection();
@@ -451,8 +453,6 @@ public class VRRenderer extends EntityRenderer
 
             lastMouseMaxOffsetX = 0;
             lastMouseMaxOffsetY = 0;
-
-            // TODO: Clean up old shader object if initialised
 
             // Main render FBO
             if (_depthRenderBufferId != -1)
@@ -625,8 +625,6 @@ public class VRRenderer extends EntityRenderer
         renderViewEntityX = renderViewEntity.lastTickPosX + (renderViewEntity.posX - renderViewEntity.lastTickPosX) * (double)renderPartialTicks;
         renderViewEntityY = renderViewEntity.lastTickPosY + (renderViewEntity.posY - renderViewEntity.lastTickPosY) * (double)renderPartialTicks;
         renderViewEntityZ = renderViewEntity.lastTickPosZ + (renderViewEntity.posZ - renderViewEntity.lastTickPosZ) * (double)renderPartialTicks;
-        //Looks like cloudFog is no longer used
-        //this.cloudFog = this.mc.renderGlobal.hasCloudFog(renderViewEntityX, renderViewEntityY, renderViewEntityZ, renderPartialTicks);
 
         for (int renderSceneNumber = 0; renderSceneNumber < 2; ++renderSceneNumber)
         {
@@ -695,6 +693,8 @@ public class VRRenderer extends EntityRenderer
             mc.checkGLError("FBO viewport / scissor setup");
 
             GL11.glClear (GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+            
+            //TODO: fog color isn't quite right yet when eyes split water/air
             this.updateFogColor(renderPartialTicks);
             GL11.glClearColor (fogColorRed, fogColorGreen, fogColorBlue, 0.5f);
             GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
@@ -928,20 +928,8 @@ public class VRRenderer extends EntityRenderer
             {
                 
             	//Draw crosshair
-            	
-
                 GL11.glClear( GL11.GL_DEPTH_BUFFER_BIT);
-                GL11.glPointSize(5.0f);
-                GL11.glBegin(GL11.GL_POINTS);
-                GL11.glColor3f(1.0f, 1.0f, 1.0f);
-                pointX = 0;
-                pointY = 0;
-                pointZ = 0;
-                GL11.glVertex3f(pointX, pointY, pointZ);
-                GL11.glEnd();
 	            this.mc.mcProfiler.endStartSection("crosshair");
-	            this.mc.renderEngine.bindTexture("/gui/icons.png");
-
 		        MovingObjectPosition crossPos = this.mc.objectMouseOver;
 		        if( crossPos == null )
 		        {
@@ -955,11 +943,6 @@ public class VRRenderer extends EntityRenderer
 
 			        float var7 = 0.00390625F;
 			        float var8 = 0.00390625F;
-			        Tessellator.instance.startDrawingQuads();
-			        Tessellator.instance.addVertexWithUV(- 1, + 1, 0,  0     , 16* var8);
-			        Tessellator.instance.addVertexWithUV(+ 1, + 1, 0, 16*var7, 16* var8);
-			        Tessellator.instance.addVertexWithUV(+ 1, - 1, 0, 16*var7, 0       );
-			        Tessellator.instance.addVertexWithUV(- 1, - 1, 0, 0      , 0       );
 
 		            GL11.glPushMatrix();
 		            GL11.glTranslatef(crossX, crossY, crossZ);
@@ -973,13 +956,19 @@ public class VRRenderer extends EntityRenderer
 		            GL11.glEnable(GL11.GL_BLEND);
 		            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 			        GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.5f); //white crosshair
+
+			        this.mc.renderEngine.bindTexture("/gui/icons.png");
+
+			        Tessellator.instance.startDrawingQuads();
+			        Tessellator.instance.addVertexWithUV(- 1, + 1, 0,  0     , 16* var8);
+			        Tessellator.instance.addVertexWithUV(+ 1, + 1, 0, 16*var7, 16* var8);
+			        Tessellator.instance.addVertexWithUV(+ 1, - 1, 0, 16*var7, 0       );
+			        Tessellator.instance.addVertexWithUV(- 1, - 1, 0, 0      , 0       );
 			        Tessellator.instance.draw();
 			        GL11.glDisable(GL11.GL_BLEND);
 			        GL11.glPopMatrix();
+			        mc.checkGLError("crosshair");
 		        }
-
-                
-                GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
                 GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
@@ -1019,7 +1008,6 @@ public class VRRenderer extends EntityRenderer
                 GL11.glColorMask(true, true, true, true);
                 mc.checkGLError("FBO init");
 
-                // TODO: set correct mouse x and y params
                 int width = eyeRenderParams._leftViewPortW;
                 int height = eyeRenderParams._leftViewPortH;
                 float renderScale = 1.0f;
@@ -1061,7 +1049,6 @@ public class VRRenderer extends EntityRenderer
                 {
                     this.mc.currentScreen.drawScreen(scaledMouseX, scaledMouseY, renderPartialTicks);
 
-                    // TODO: Add mouse pointer per viewport
                     GL11.glDisable(GL11.GL_BLEND);
                     this.mc.mcProfiler.endStartSection("mouse pointer");
                     this.mc.renderEngine.bindTexture("/gui/icons.png");
@@ -1085,7 +1072,6 @@ public class VRRenderer extends EntityRenderer
 
                 GL11.glEnable(GL11.GL_SCISSOR_TEST);
                 GL11.glEnable(GL11.GL_BLEND); // Allow GUI transparency!
-                //GL11.glDisable(GL11.GL_ALPHA_TEST);
 
                 if (renderSceneNumber == 0)
                 {
@@ -1120,7 +1106,7 @@ public class VRRenderer extends EntityRenderer
                 // Set up perspective view
                 this.setupOverlayRendering(_GUIscaledWidth, _GUIscaledHeight, _GUIscaleFactor, oculusRift, eyeRenderParams, this.mc.renderViewEntity, renderPartialTicks, renderSceneNumber);
 
-                int textureUnit = GL13.GL_TEXTURE0; //OpenGlHelper.defaultTexUnit;
+                int textureUnit = GL13.GL_TEXTURE0; 
                 OpenGlHelper.setActiveTexture(textureUnit);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, _GUIcolorTextureId);
 
@@ -1136,12 +1122,7 @@ public class VRRenderer extends EntityRenderer
                 // Stop shader use
                 ARBShaderObjects.glUseProgramObjectARB(0);
 
-                //GL11.glFlush();
-                GL11.glDisable(GL11.GL_BLEND);
-
             }
-
-
         }
 
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
@@ -1152,7 +1133,7 @@ public class VRRenderer extends EntityRenderer
             mc.checkGLError("Before distortion");
 
             // Bind the texture
-            int textureUnit = GL13.GL_TEXTURE0; //OpenGlHelper.defaultTexUnit;
+            int textureUnit = GL13.GL_TEXTURE0; 
             OpenGlHelper.setActiveTexture(textureUnit);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, _colorTextureId);
 
@@ -1382,7 +1363,7 @@ public class VRRenderer extends EntityRenderer
         }
 
         GL11.glColorMask(true, true, true, false);
-        GL11.glFlush();
+        //GL11.glFlush();
         this.mc.mcProfiler.endSection();
     }
 
@@ -1398,14 +1379,17 @@ public class VRRenderer extends EntityRenderer
         // Delete the vertex VBO
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
         GL15.glDeleteBuffers(vboId);
+        vboId = 0;
 
         // Delete the index VBO
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
         GL15.glDeleteBuffers(vboiId);
+        vboiId = 0;
 
         // Delete the VAO
         GL30.glBindVertexArray(0);
         GL30.glDeleteVertexArrays(vaoId);
+        vaoId = 0;
 
         this.mc.checkGLError("destroyVBO");
     }

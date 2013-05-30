@@ -232,20 +232,7 @@
          }
          finally
          {
-@@ -819,10 +767,11 @@
- 
-             long var6 = System.nanoTime();
-             this.mcProfiler.startSection("tick");
-+            boolean renderGUI = false;
- 
-             for (int var3 = 0; var3 < this.timer.elapsedTicks; ++var3)
-             {
--                this.runTick();
-+                renderGUI = this.runTick();
-             }
- 
-             this.mcProfiler.endStartSection("preRenderErrors");
-@@ -869,7 +818,7 @@
+@@ -869,7 +817,7 @@
                  this.toggleFullscreen();
              }
  
@@ -254,7 +241,7 @@
              {
                  if (!this.mcProfiler.profilingEnabled)
                  {
-@@ -885,7 +834,10 @@
+@@ -885,7 +833,10 @@
                  this.prevFrameTime = System.nanoTime();
              }
  
@@ -266,7 +253,7 @@
              this.mcProfiler.startSection("root");
              Thread.yield();
  
-@@ -1192,12 +1144,10 @@
+@@ -1192,12 +1143,10 @@
       */
      public void setIngameNotInFocus()
      {
@@ -282,18 +269,7 @@
      }
  
      /**
-@@ -1418,8 +1368,9 @@
-     /**
-      * Runs the current tick.
-      */
--    public void runTick()
-+    public boolean runTick()
-     {
-+        boolean renderGUI = false;
-         if (this.rightClickDelayTimer > 0)
-         {
-             --this.rightClickDelayTimer;
-@@ -1451,21 +1402,24 @@
+@@ -1451,21 +1400,24 @@
              this.renderEngine.updateDynamicTextures();
          }
  
@@ -327,7 +303,7 @@
  
          if (this.currentScreen != null)
          {
-@@ -1479,7 +1433,17 @@
+@@ -1479,7 +1431,17 @@
          {
              try
              {
@@ -346,7 +322,7 @@
              }
              catch (Throwable var6)
              {
-@@ -1565,7 +1529,14 @@
+@@ -1565,7 +1527,14 @@
                      }
                      else if (this.currentScreen != null)
                      {
@@ -362,7 +338,7 @@
                      }
                  }
              }
-@@ -1623,6 +1594,209 @@
+@@ -1623,6 +1592,209 @@
                                  this.displayInGameMenu();
                              }
  
@@ -572,7 +548,7 @@
                              if (Keyboard.getEventKey() == 31 && Keyboard.isKeyDown(61))
                              {
                                  this.forceReload();
-@@ -1667,10 +1841,11 @@
+@@ -1667,10 +1839,11 @@
                                  this.gameSettings.hideGUI = !this.gameSettings.hideGUI;
                              }
  
@@ -585,16 +561,7 @@
                              }
  
                              if (Keyboard.getEventKey() == 63)
-@@ -1883,6 +2058,8 @@
- 
-         this.mcProfiler.endSection();
-         this.systemTime = getSystemTime();
-+
-+        return renderGUI;
-     }
- 
-     /**
-@@ -2021,6 +2198,7 @@
+@@ -2021,6 +2194,7 @@
  
              this.setServerData((ServerData)null);
              this.integratedServerIsRunning = false;
