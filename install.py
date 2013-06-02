@@ -95,7 +95,8 @@ def zipmerge( target_file, source_file ):
     target.close()
     out.close()
     os.remove( target_file )
-    shutil.move( out_filename, target_file )
+    shutil.copy( out_filename, target_file )
+   
     
 def symlink(source, link_name):
     import os
@@ -115,6 +116,8 @@ def symlink(source, link_name):
             raise ctypes.WinError()
 
 def main(mcp_dir):
+    print 'Using mcp dir: %s' % mcp_dir
+    print 'Using base dir: %s' % base_dir
     print("Downloading dependencies...")
     download_deps( mcp_dir )
 
@@ -141,6 +144,7 @@ def main(mcp_dir):
     
     process = subprocess.Popen(["git","submodule","update"], cwd=base_dir, bufsize=-1)
     process.communicate()
+    os.mkdir( os.path.join( mcp_dir, "lib" ) )
     symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ,"JRift.jar") )
 
     
@@ -154,4 +158,4 @@ if __name__ == '__main__':
     elif os.path.isfile(os.path.join('..', 'runtime', 'commands.py')):
         main(os.path.abspath('..'))
     else:
-        main(os.path.abspath('mcp'))
+        main(os.path.abspath('mcp'))	
