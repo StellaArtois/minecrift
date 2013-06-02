@@ -145,9 +145,15 @@ def main(mcp_dir):
 	#Need git in system PATH!
     process = subprocess.Popen(["git","submodule","update"], cwd=base_dir, bufsize=-1)
     process.communicate()
-    os.mkdir( os.path.join( mcp_dir, "lib" ) )
-    symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ,"JRift.jar") )
+    try:
+        os.mkdir( os.path.join( mcp_dir, "lib" ) )
+    except WindowsError:
+        pass	
 
+    try:
+        symlink( os.path.join( base_dir, "JRift","JRift.jar"), os.path.join( mcp_dir, "lib" ,"JRift.jar") )
+    except WindowsError:
+        pass
     
 if __name__ == '__main__':
     parser = OptionParser()
